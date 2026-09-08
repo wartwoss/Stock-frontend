@@ -40,11 +40,11 @@ const sections = [
         path: "/credits",
         icon: CreditCard,
       },
-      {
+  /*    {
         name: "Payments",
         path: "/payments",
         icon: WalletCards,
-      },
+      }, */
     ],
   },
   {

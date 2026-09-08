@@ -11,6 +11,9 @@ import Inventory from "./pages/Inventory";
 import Sales from "./pages/Sales";
 import Customers from "./pages/Customers";
 import Credits from "./pages/Credits";
+import Payments from "./pages/Payments";
+import Notifications from "./pages/Notifications";
+import Settings from "./pages/Settings";
 
 
 function App() {
@@ -42,9 +45,9 @@ function App() {
           />
           <Route
             path="/payments"
-            element={
-              <PlaceholderPage title="Payments" />
-            }
+           /* element={
+              <Payments />
+            } */
           />
           <Route
             path="/appliances"
@@ -60,13 +63,13 @@ function App() {
           <Route
             path="/notifications"
             element={
-              <PlaceholderPage title="Notifications" />
+              <Notifications  />
             }
           />
           <Route
             path="/settings"
             element={
-              <PlaceholderPage title="Settings" />
+              <Settings />
             }
           />
         </Route>

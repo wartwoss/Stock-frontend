@@ -6,9 +6,21 @@ export async function getPayments() {
     },
   });
   if (!response.ok) {
-    throw new Error(
-      "Failed to load payments"
-    );
+    throw new Error("Failed to load payments");
+  }
+  return response.json();
+}
+export async function getPayment(id) {
+  const response = await fetch(
+    `${BASE_URL}/${id}`,
+    {
+      headers: {
+        Accept: "application/json",
+      },
+    }
+  );
+  if (!response.ok) {
+    throw new Error("Failed to load payment");
   }
   return response.json();
 }
