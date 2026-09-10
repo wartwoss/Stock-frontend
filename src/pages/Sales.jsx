@@ -45,15 +45,23 @@ function getToday() {
   ).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
-function createEmptyForm() {
+function getStoredStorageId(storageList = []) {
+  const stored = localStorage.getItem("default_storage_id");
+  if (stored && storageList.some((s) => String(s.id) === String(stored))) {
+    return String(stored);
+  }
+  return storageList.length > 0 ? String(storageList[0].id) : "";
+}
+
+function createEmptyForm(defaultStorageId = "") {
   return {
     appliance_id: "",
-    storage_id: "",
+    storage_id: defaultStorageId,
     quantity: 1,
     selling_price: "",
     payment_type: "cash",
     sale_date: getToday(),
-    customer_mode: "existing",
+    customer_mode: "none",
     customer_id: "",
     customer_name: "",
     phone_number: "",
@@ -85,11 +93,16 @@ function Sales() {
   const [modalOpen, setModalOpen] =
     useState(false);
   const [form, setForm] =
-    useState(createEmptyForm());
+    useState(() => createEmptyForm(getStoredStorageId()));
   const [saving, setSaving] =
     useState(false);
   const [formError, setFormError] =
     useState("");
+
+  const [applianceSelectOpen, setApplianceSelectOpen] = useState(false);
+  const [applianceSearch, setApplianceSearch] = useState("");
+  const [customerSelectOpen, setCustomerSelectOpen] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState("");
   useEffect(() => {
     loadPage();
   }, []);
@@ -115,7 +128,13 @@ function Sales() {
       setStorages(storagesData);
       setInventory(inventoryData);
       setCustomers(customersData);
-    } catch (err) {
+
+      const defaultStorage = getStoredStorageId(storagesData);
+      setForm((current) => ({
+        ...current,
+        storage_id: current.storage_id || defaultStorage,
+      }));
+    } catch {
       setError(
         "Could not load sales information."
       );
@@ -196,7 +215,8 @@ function Sales() {
       typeFilter,
     ]);
   function openModal() {
-    setForm(createEmptyForm());
+    const defaultStorage = getStoredStorageId(storages);
+    setForm(createEmptyForm(defaultStorage));
     setFormError("");
     setModalOpen(true);
   }
@@ -209,10 +229,21 @@ function Sales() {
     name,
     value
   ) {
-    setForm((current) => ({
-      ...current,
-      [name]: value,
-    }));
+    if (name === "storage_id" && value) {
+      localStorage.setItem("default_storage_id", value);
+    }
+    setForm((current) => {
+      const next = {
+        ...current,
+        [name]: value,
+      };
+      if (name === "payment_type") {
+        if (value === "credit" && next.customer_mode === "none") {
+          next.customer_mode = "existing";
+        }
+      }
+      return next;
+    });
     setFormError("");
   }
   async function handleSubmit(
@@ -247,12 +278,20 @@ function Sales() {
       "credit"
     ) {
       if (
+        form.customer_mode === "none"
+      ) {
+        setFormError(
+          "A customer is required for credit agreements."
+        );
+        return;
+      }
+      if (
         form.customer_mode ===
           "existing" &&
         !form.customer_id
       ) {
         setFormError(
-          "Select a customer."
+          "Select a customer for the credit agreement."
         );
         return;
       }
@@ -285,43 +324,59 @@ function Sales() {
         );
         return;
       }
+    } else {
+      // Cash payment
+      if (
+        form.customer_mode === "existing" &&
+        !form.customer_id
+      ) {
+        setFormError(
+          "Please select a customer, or choose 'Walk-in' for an unregistered buyer."
+        );
+        return;
+      }
+      if (
+        form.customer_mode === "new" &&
+        (!form.customer_name || !form.phone_number)
+      ) {
+        setFormError(
+          "Customer name and phone number are required, or choose 'Walk-in'."
+        );
+        return;
+      }
     }
     let createdSale = null;
     try {
       setSaving(true);
       setFormError("");
       let customerId = null;
-      /*
-       * CREDIT:
-       * create new customer if needed
-       */
+
+      // Process customer for both cash and credit if selected
       if (
-        form.payment_type ===
-        "credit"
+        form.customer_mode === "new"
       ) {
-        if (
-          form.customer_mode ===
-          "new"
-        ) {
-          const customer =
-            await createCustomer({
-              name:
-                form.customer_name,
-              phone_number:
-                form.phone_number,
-              description:
-                form.description ||
-                null,
-            });
-          customerId =
-            customer.id;
-        } else {
-          customerId =
-            Number(
-              form.customer_id
-            );
-        }
+        const customer =
+          await createCustomer({
+            name:
+              form.customer_name,
+            phone_number:
+              form.phone_number,
+            description:
+              form.description ||
+              null,
+          });
+        customerId =
+          customer.id;
+      } else if (
+        form.customer_mode === "existing" &&
+        form.customer_id
+      ) {
+        customerId =
+          Number(
+            form.customer_id
+          );
       }
+
       /*
        * CREATE SALE
        */
@@ -347,10 +402,7 @@ function Sales() {
         sale_date:
           form.sale_date,
       };
-      if (
-        form.payment_type ===
-        "credit"
-      ) {
+      if (customerId) {
         salePayload.customer_id =
           customerId;
       }
@@ -609,9 +661,31 @@ function Sales() {
                         />
                       </td>
                       <td>
-                        {sale.customer
-                          ?.name ??
-                          "Cash customer"}
+                        {sale.customer ? (
+                          <div>
+                            <strong>
+                              {sale.customer.name}
+                            </strong>
+                            {sale.customer.phone_number && (
+                              <div
+                                style={{
+                                  fontSize: "11px",
+                                  color: "var(--text-muted)",
+                                }}
+                              >
+                                {sale.customer.phone_number}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span
+                            style={{
+                              color: "var(--text-muted)",
+                            }}
+                          >
+                            Walk-in Customer
+                          </span>
+                        )}
                       </td>
                       <td>
                         {formatDate(
@@ -666,42 +740,16 @@ function Sales() {
                   <label>
                     Appliance
                   </label>
-                  <select
-                    required
-                    value={
-                      form.appliance_id
-                    }
-                    onChange={(event) =>
-                      updateField(
-                        "appliance_id",
-                        event.target.value
-                      )
-                    }
+                  <button
+                    type="button"
+                    className="select-button"
+                    onClick={() => setApplianceSelectOpen(true)}
+                    style={{ textAlign: "left", padding: "8px 12px", border: "1px solid #d1d5db", borderRadius: "6px", backgroundColor: "#fff", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
                   >
-                    <option value="">
-                      Select appliance
-                    </option>
-                    {appliances.map(
-                      (appliance) => (
-                        <option
-                          key={
-                            appliance.id
-                          }
-                          value={
-                            appliance.id
-                          }
-                        >
-                          {
-                            appliance.name
-                          }
-                          {" — "}
-                          {
-                            appliance.brand
-                          }
-                        </option>
-                      )
-                    )}
-                  </select>
+                    {form.appliance_id
+                      ? appliances.find((a) => String(a.id) === String(form.appliance_id))?.name || "Select appliance"
+                      : "Select appliance"}
+                  </button>
                 </div>
                 <div className="form-field">
                   <label>
@@ -896,154 +944,162 @@ function Sales() {
                   </button>
                 </div>
               </div>
-              {form.payment_type ===
-                "credit" && (
-                <div className="credit-sale-section">
-                  <div className="credit-section-title">
-                    <UserRound
-                      size={18}
-                    />
-                    Customer
-                  </div>
-                  <div className="customer-mode">
+              {/* CUSTOMER SECTION */}
+              <div className="credit-sale-section">
+                <div className="credit-section-title">
+                  <UserRound
+                    size={18}
+                  />
+                  {form.payment_type === "cash"
+                    ? "Customer (Optional — For Warranty / Record)"
+                    : "Customer (Required for Credit Agreement)"}
+                </div>
+                <div className="customer-mode">
+                  {form.payment_type === "cash" && (
                     <button
                       type="button"
                       className={
-                        form.customer_mode ===
+                        form.customer_mode === "none"
+                          ? "active"
+                          : ""
+                      }
+                      onClick={() =>
+                        updateField(
+                          "customer_mode",
+                          "none"
+                        )
+                      }
+                    >
+                      Walk-in (No customer)
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className={
+                      form.customer_mode ===
+                      "existing"
+                        ? "active"
+                        : ""
+                    }
+                    onClick={() =>
+                      updateField(
+                        "customer_mode",
                         "existing"
-                          ? "active"
-                          : ""
-                      }
-                      onClick={() =>
-                        updateField(
-                          "customer_mode",
-                          "existing"
-                        )
-                      }
-                    >
-                      Existing Customer
-                    </button>
+                      )
+                    }
+                  >
+                    Existing Customer
+                  </button>
+                  <button
+                    type="button"
+                    className={
+                      form.customer_mode ===
+                      "new"
+                        ? "active"
+                        : ""
+                    }
+                    onClick={() =>
+                      updateField(
+                        "customer_mode",
+                        "new"
+                      )
+                    }
+                  >
+                    New Customer
+                  </button>
+                </div>
+                {form.customer_mode === "none" ? (
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: "#6b7280",
+                      padding: "4px 0",
+                    }}
+                  >
+                    Logged as an anonymous walk-in sale. Choose "Existing Customer" or "New Customer" to attach customer details for warranty tracking.
+                  </div>
+                ) : form.customer_mode ===
+                  "existing" ? (
+                  <div className="form-field">
+                    <label>
+                      Customer
+                    </label>
                     <button
                       type="button"
-                      className={
-                        form.customer_mode ===
-                        "new"
-                          ? "active"
-                          : ""
-                      }
-                      onClick={() =>
-                        updateField(
-                          "customer_mode",
-                          "new"
-                        )
-                      }
+                      className="select-button"
+                      onClick={() => setCustomerSelectOpen(true)}
+                      style={{ textAlign: "left", padding: "8px 12px", border: "1px solid #d1d5db", borderRadius: "6px", backgroundColor: "#fff", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
                     >
-                      New Customer
+                      {form.customer_id
+                        ? customers.find((c) => String(c.id) === String(form.customer_id))?.name || "Select customer"
+                        : "Select customer"}
                     </button>
                   </div>
-                  {form.customer_mode ===
-                    "existing" ? (
-                    <div className="form-field">
-                      <label>
-                        Customer
-                      </label>
-                      <select
-                        value={
-                          form.customer_id
-                        }
-                        onChange={(event) =>
-                          updateField(
-                            "customer_id",
-                            event.target
-                              .value
-                          )
-                        }
-                      >
-                        <option value="">
-                          Select customer
-                        </option>
-                        {customers.map(
-                          (customer) => (
-                            <option
-                              key={
-                                customer.id
-                              }
-                              value={
-                                customer.id
-                              }
-                            >
-                              {
-                                customer.name
-                              }
-                              {" — "}
-                              {
-                                customer.phone_number
-                              }
-                            </option>
-                          )
-                        )}
-                      </select>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="form-grid">
-                        <div className="form-field">
-                          <label>
-                            Customer Name
-                          </label>
-                          <input
-                            value={
-                              form.customer_name
-                            }
-                            placeholder="Ahmad Ali"
-                            onChange={(event) =>
-                              updateField(
-                                "customer_name",
-                                event.target
-                                  .value
-                              )
-                            }
-                          />
-                        </div>
-                        <div className="form-field">
-                          <label>
-                            Phone Number
-                          </label>
-                          <input
-                            value={
-                              form.phone_number
-                            }
-                            placeholder="0770..."
-                            onChange={(event) =>
-                              updateField(
-                                "phone_number",
-                                event.target
-                                  .value
-                              )
-                            }
-                          />
-                        </div>
-                      </div>
+                ) : (
+                  <>
+                    <div className="form-grid">
                       <div className="form-field">
                         <label>
-                          Description
+                          Customer Name
                         </label>
                         <input
                           value={
-                            form.description
+                            form.customer_name
                           }
-                          placeholder="Optional note"
+                          placeholder="Ahmad Ali"
                           onChange={(event) =>
                             updateField(
-                              "description",
+                              "customer_name",
                               event.target
                                 .value
                             )
                           }
                         />
                       </div>
-                    </>
-                  )}
+                      <div className="form-field">
+                        <label>
+                          Phone Number
+                        </label>
+                        <input
+                          value={
+                            form.phone_number
+                          }
+                          placeholder="0770..."
+                          onChange={(event) =>
+                            updateField(
+                              "phone_number",
+                              event.target
+                                .value
+                            )
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className="form-field">
+                      <label>
+                        Description / Warranty Note
+                      </label>
+                      <input
+                        value={
+                          form.description
+                        }
+                        placeholder="Optional warranty or customer note"
+                        onChange={(event) =>
+                          updateField(
+                            "description",
+                            event.target
+                              .value
+                          )
+                        }
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* INSTALLMENT SECTION */}
+              {form.payment_type === "credit" && (
+                <div className="credit-sale-section">
                   <div className="credit-section-title">
                     <CreditCard
                       size={18}
@@ -1152,6 +1208,100 @@ function Sales() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      
+      {/* Appliance Selection Modal */}
+      {applianceSelectOpen && (
+        <div className="modal-backdrop" style={{ zIndex: 1100 }} onMouseDown={() => setApplianceSelectOpen(false)}>
+          <div className="app-modal" onMouseDown={(e) => e.stopPropagation()} style={{ maxWidth: '500px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', height: '80vh' }}>
+            <div className="modal-header" style={{ flexShrink: 0 }}>
+              <h2>Select Appliance</h2>
+              <button type="button" className="modal-close" onClick={() => setApplianceSelectOpen(false)}><X size={20} /></button>
+            </div>
+            <div style={{ padding: '0 20px 10px 20px', flexShrink: 0 }}>
+              <div className="table-search" style={{ margin: '0' }}>
+                <Search size={18} />
+                <input
+                  type="text"
+                  placeholder="Search appliances..."
+                  value={applianceSearch}
+                  onChange={(e) => setApplianceSearch(e.target.value)}
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div style={{ overflowY: 'auto', flex: 1, padding: '0 20px 20px 20px' }}>
+              {appliances
+                .filter(a => a.name.toLowerCase().includes(applianceSearch.toLowerCase()) || a.brand.toLowerCase().includes(applianceSearch.toLowerCase()))
+                .map((a) => (
+                  <div 
+                    key={a.id} 
+                    style={{ padding: '10px', borderBottom: '1px solid #e5e7eb', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}
+                    onClick={() => {
+                      updateField("appliance_id", String(a.id));
+                      setApplianceSelectOpen(false);
+                      setApplianceSearch("");
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <Package size={18} color="#6b7280" />
+                    <div>
+                      <div style={{ fontWeight: 500 }}>{a.name}</div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>{a.brand}</div>
+                    </div>
+                  </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Customer Selection Modal */}
+      {customerSelectOpen && (
+        <div className="modal-backdrop" style={{ zIndex: 1100 }} onMouseDown={() => setCustomerSelectOpen(false)}>
+          <div className="app-modal" onMouseDown={(e) => e.stopPropagation()} style={{ maxWidth: '500px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', height: '80vh' }}>
+            <div className="modal-header" style={{ flexShrink: 0 }}>
+              <h2>Select Customer</h2>
+              <button type="button" className="modal-close" onClick={() => setCustomerSelectOpen(false)}><X size={20} /></button>
+            </div>
+            <div style={{ padding: '0 20px 10px 20px', flexShrink: 0 }}>
+              <div className="table-search" style={{ margin: '0' }}>
+                <Search size={18} />
+                <input
+                  type="text"
+                  placeholder="Search customers..."
+                  value={customerSearch}
+                  onChange={(e) => setCustomerSearch(e.target.value)}
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div style={{ overflowY: 'auto', flex: 1, padding: '0 20px 20px 20px' }}>
+              {customers
+                .filter(c => c.name.toLowerCase().includes(customerSearch.toLowerCase()) || (c.phone_number && c.phone_number.includes(customerSearch.toLowerCase())))
+                .map((c) => (
+                  <div 
+                    key={c.id} 
+                    style={{ padding: '10px', borderBottom: '1px solid #e5e7eb', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}
+                    onClick={() => {
+                      updateField("customer_id", String(c.id));
+                      setCustomerSelectOpen(false);
+                      setCustomerSearch("");
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <UserRound size={18} color="#6b7280" />
+                    <div>
+                      <div style={{ fontWeight: 500 }}>{c.name}</div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>{c.phone_number}</div>
+                    </div>
+                  </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

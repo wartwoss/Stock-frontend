@@ -1,6 +1,4 @@
 import {
-  Bell,
-  Search,
   Menu,
 } from "lucide-react";
 function Topbar({ title, toggleSidebar }) {
@@ -19,19 +17,7 @@ function Topbar({ title, toggleSidebar }) {
         </div>
       </div>
       <div className="topbar-right">
-        <div className="topbar-search">
-          <Search size={18} />
-          <input
-            type="text"
-            placeholder="Search..."
-          />
-        </div>
-        <button className="notification-button">
-          <Bell size={20} />
-          <span className="notification-badge">
-            3
-          </span>
-        </button>
+
         <div className="topbar-profile">
           <div className="profile-avatar">
             A

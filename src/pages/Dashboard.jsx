@@ -7,7 +7,6 @@ import {
   WalletCards,
   AlertTriangle,
   TrendingUp,
-  Clock,
 } from "lucide-react";
 import { getDashboard } from "../api/dashboard";
 function Dashboard() {
@@ -268,46 +267,7 @@ function Dashboard() {
           </div>
         </div>
       </section>
-      <section className="dashboard-bottom-grid">
-        <div className="dashboard-panel compact-panel">
-          <div className="mini-stat">
-            <div className="mini-stat-icon">
-              <DollarSign size={20} />
-            </div>
-            <div>
-              <span>Cash Sales</span>
-              <strong>
-                {sales.cash_sales ?? 0}
-              </strong>
-            </div>
-          </div>
-          <div className="mini-stat">
-            <div className="mini-stat-icon">
-              <CreditCard size={20} />
-            </div>
-            <div>
-              <span>Credit Sales</span>
-              <strong>
-                {sales.credit_sales ?? 0}
-              </strong>
-            </div>
-          </div>
-          <div className="mini-stat">
-            <div className="mini-stat-icon">
-              <Clock size={20} />
-            </div>
-            <div>
-              <span>
-                Completed Credits
-              </span>
-              <strong>
-                {credits.completed_credits ??
-                  0}
-              </strong>
-            </div>
-          </div>
-        </div>
-      </section>
+
     </div>
   );
 }
