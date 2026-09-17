@@ -1,3 +1,8 @@
+﻿import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { runBackup } from "../api/backup";
+import { CloudUpload } from "lucide-react";
+import { useTheme } from "../contexts/ThemeContext";
 import {
   useEffect,
   useState,
@@ -8,6 +13,7 @@ import {
   Plus,
   Pencil,
   Trash2,
+    Users,
   X,
   Clock3,
   BellRing,
@@ -15,6 +21,7 @@ import {
   Save,
   MapPin,
   CheckCircle2,
+  Palette,
 } from "lucide-react";
 import {
   getStorages,
@@ -33,10 +40,16 @@ const emptyStorageForm = {
   location: "",
 };
 function Settings() {
+  const { t } = useTranslation();
   const [storages, setStorages] =
     useState([]);
   const [loading, setLoading] =
     useState(true);
+  const { theme, setTheme, uiScale, setUiScale, fontScale, setFontScale } = useTheme();
+  const [backupRunning, setBackupRunning] = useState(false);
+  const [backupStatus, setBackupStatus] = useState(null);
+  const [backupMessage, setBackupMessage] = useState("");
+  const [backupError, setBackupError] = useState("");
   const [error, setError] =
     useState("");
   const [
@@ -127,7 +140,7 @@ function Settings() {
         statusData.data ??
         statusData
       );
-    } catch (err) {
+    } catch {
       setError(
         "Could not load settings."
       );
@@ -249,7 +262,7 @@ function Settings() {
               storage.id
           )
       );
-    } catch (err) {
+    } catch {
       alert(
         "This storage location may already be used by inventory or sales and cannot be deleted."
       );
@@ -343,7 +356,7 @@ function Settings() {
   if (loading) {
     return (
       <div className="table-state">
-        Loading settings...
+        {t("common.loading")}
       </div>
     );
   }
@@ -360,6 +373,23 @@ function Settings() {
       </div>
     );
   }
+  async function handleRunBackup() {
+    try {
+      setBackupRunning(true);
+      setBackupMessage("");
+      setBackupError("");
+      const result = await runBackup();
+      setBackupMessage(
+        "Backup complete! " + (result.filename || "") + " uploaded to Google Drive."
+      );
+      setBackupStatus({ last_backup: result.backed_up_at });
+    } catch (err) {
+      setBackupError(err.message || "Backup failed. Check rclone is configured.");
+    } finally {
+      setBackupRunning(false);
+    }
+  }
+
   const lastChecked =
     monitoringStatus?.last_checked_at ??
     monitoringStatus?.settings
@@ -369,7 +399,7 @@ function Settings() {
     <div className="settings-page">
       <div className="page-toolbar">
         <div>
-          <h2>Settings</h2>
+          <h2>{t("settings.title")}</h2>
           <p>
             Configure storage locations
             and automatic payment
@@ -487,6 +517,147 @@ function Settings() {
             </div>
           )}
         </section>
+
+        
+        {/* CUSTOMERS SETTINGS */}
+        <section className="settings-section">
+          <div className="settings-section-header">
+            <div className="settings-heading">
+              <div className="settings-heading-icon">
+                <Users size={20} />
+              </div>
+              <div>
+                <h3>{t("navigation.customers")}</h3>
+                <p>{t("customers.subtitle", "Manage customers, outstanding debts and credit accounts.")}</p>
+              </div>
+            </div>
+          </div>
+          <div className="monitoring-form">
+            <Link 
+              to="/customers" 
+              style={{ display: "inline-block", padding: "10px 16px", backgroundColor: "#7460ff", color: "white", borderRadius: "8px", textDecoration: "none", fontWeight: "600", fontSize: "14px" }}
+            >
+              {t("navigation.customers")}
+            </Link>
+          </div>
+        </section>
+
+        {/* THEME SETTINGS */}
+        <section className="settings-section">
+          <div className="settings-section-header">
+            <div className="settings-heading">
+              <div className="settings-heading-icon">
+                <Palette size={20} />
+              </div>
+              <div>
+                <h3>{t("settings.theme.title")}</h3>
+                <p>{t("settings.theme.subtitle")}</p>
+              </div>
+            </div>
+          </div>
+          <div className="monitoring-form">
+            <div className="form-field" style={{ marginBottom: 0 }}>
+              <label>{t("settings.theme.label")}</label>
+              <select 
+                value={theme}
+                onChange={(e) => setTheme(e.target.value)}
+                style={{ width: "100%", maxWidth: "300px", marginTop: "8px", padding: "10px", borderRadius: "8px", border: "1px solid #dfe2e7" }}
+              >
+                <option value="minimalism">Minimalism (Light Blue & Simple)</option>
+                <option value="brutalism">Brutalism (Gray & Sharp Corners)</option>
+              </select>
+              </div>
+            </div>
+            <div className="monitoring-form" style={{ marginTop: '20px', display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+              <div className="form-field" style={{ marginBottom: 0, flex: 1, minWidth: '200px' }}>
+                <label>{t("settings.theme.uiScale", "UI Scale")}</label>
+                <select 
+                  value={uiScale}
+                  onChange={(e) => setUiScale(parseFloat(e.target.value))}
+                  style={{ width: "100%", marginTop: "8px", padding: "10px", borderRadius: "8px", border: "1px solid #dfe2e7" }}
+                >
+                  <option value="0.8">80% (Small)</option>
+                  <option value="0.9">90%</option>
+                  <option value="1">100% (Default)</option>
+                  <option value="1.1">110%</option>
+                  <option value="1.2">120% (Large)</option>
+                </select>
+              </div>
+              <div className="form-field" style={{ marginBottom: 0, flex: 1, minWidth: '200px' }}>
+                <label>{t("settings.theme.fontScale", "Font Size")}</label>
+                <select 
+                  value={fontScale}
+                  onChange={(e) => setFontScale(parseFloat(e.target.value))}
+                  style={{ width: "100%", marginTop: "8px", padding: "10px", borderRadius: "8px", border: "1px solid #dfe2e7" }}
+                >
+                  <option value="0.85">Small</option>
+                  <option value="1">Normal</option>
+                  <option value="1.15">Large</option>
+                  <option value="1.3">Extra Large</option>
+                </select>
+              </div>
+            </div>
+
+        </section>
+
+
+        {/* GOOGLE DRIVE BACKUP */}
+        <section className="settings-section">
+          <div className="settings-section-header">
+            <div className="settings-heading">
+              <div className="settings-heading-icon">
+                <CloudUpload size={20} />
+              </div>
+              <div>
+                <h3>{t("settings.backup.title")}</h3>
+                <p>{t("settings.backup.subtitle")}</p>
+              </div>
+            </div>
+          </div>
+          <div className="monitoring-form">
+            {backupMessage && (
+              <div className="settings-success-message">
+                <CheckCircle2 size={16} />
+                {backupMessage}
+              </div>
+            )}
+            {backupError && (
+              <div className="form-general-error">{backupError}</div>
+            )}
+            {backupStatus?.last_backup && (
+              <div className="monitoring-status-card" style={{ marginBottom: "14px" }}>
+                <div className="monitoring-status-icon">
+                  <CheckCircle2 size={19} />
+                </div>
+                <div>
+                  <span>{t("settings.backup.lastBackup")}</span>
+                  <strong>
+                    {new Date(backupStatus.last_backup).toLocaleString("en-US", {
+                      year: "numeric", month: "short", day: "numeric",
+                      hour: "numeric", minute: "2-digit"
+                    })}
+                  </strong>
+                </div>
+              </div>
+            )}
+            <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                className="primary-action-button"
+                onClick={handleRunBackup}
+                disabled={backupRunning}
+                style={{ display: "flex", alignItems: "center", gap: "7px" }}
+              >
+                <CloudUpload size={15} />
+                {backupRunning ? "Backing up..." : "Backup to Google Drive"}
+              </button>
+              <span style={{ fontSize: "11px", color: "#969ca7" }}>
+                Saves a .sql file locally and uploads to your configured Google Drive.
+              </span>
+            </div>
+          </div>
+        </section>
+
         {/* PAYMENT MONITORING */}
         <section className="settings-section">
           <div className="settings-section-header">
@@ -943,3 +1114,5 @@ function getApiError(
   return fallback;
 }
 export default Settings;
+
+

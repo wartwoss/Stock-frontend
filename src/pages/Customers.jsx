@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { useExchangeRate } from "../contexts/ExchangeRateContext";
 import {
   useEffect,
   useMemo,
@@ -33,7 +35,9 @@ const emptyForm = {
   description: "",
 };
 function Customers() {
-  const [customers, setCustomers] =
+    const { t } = useTranslation();
+  const { exchangeRate } = useExchangeRate();
+const [customers, setCustomers] =
     useState([]);
   const [credits, setCredits] =
     useState([]);
@@ -99,14 +103,14 @@ function Customers() {
                   customer.id
                 )
             );
-          const outstandingDebt =
-            customerCredits.reduce(
-              (total, credit) =>
-                total +
-                Number(
-                  credit.remaining_debt ??
-                    0
-                ),
+          const outstandingDebt = customerCredits.reduce(
+              (total, credit) => {
+                let debt = Number(credit.remaining_debt ?? 0);
+                if (credit.currency === 'IQD') {
+                  debt = (debt * 100) / (exchangeRate || 150000);
+                }
+                return total + debt;
+              },
               0
             );
           const activeCredits =
@@ -146,10 +150,7 @@ function Customers() {
           };
         }
       );
-    }, [
-      customers,
-      credits,
-    ]);
+    }, [customers, credits, exchangeRate]);
   const filteredCustomers =
     useMemo(() => {
       const value =
@@ -313,9 +314,7 @@ function Customers() {
     <div className="customers-page">
       <div className="page-toolbar">
         <div>
-          <h2>
-            Credit Customers
-          </h2>
+          <h2>{t("customers.creditCustomers")}</h2>
           <p>
             Manage customers,
             outstanding debts and
@@ -329,7 +328,7 @@ function Customers() {
           }
         >
           <Plus size={18} />
-          Add Customer
+          {t("customers.form.addTitle")}
         </button>
       </div>
       <section className="customer-summary">
@@ -337,7 +336,7 @@ function Customers() {
           icon={
             <Users size={20} />
           }
-          title="Customers"
+          title={t("customers.title")}
           value={
             customers.length
           }
@@ -348,7 +347,7 @@ function Customers() {
               size={20}
             />
           }
-          title="Active Debtors"
+          title={t("customers.activeDebtors")}
           value={
             activeCount +
             overdueCount
@@ -360,7 +359,7 @@ function Customers() {
               size={20}
             />
           }
-          title="Outstanding Debt"
+          title={t("customers.outstanding")}
           value={
             formatMoney(
               totalOutstanding
@@ -371,7 +370,7 @@ function Customers() {
           icon={
             <UserRound size={20} />
           }
-          title="Overdue"
+          title={t("customers.overdue")}
           value={
             overdueCount
           }
@@ -383,7 +382,7 @@ function Customers() {
             <Search size={18} />
             <input
               type="text"
-              placeholder="Search name or phone..."
+              placeholder={t("customers.searchPlace")}
               value={search}
               onChange={(event) =>
                 setSearch(
@@ -403,9 +402,7 @@ function Customers() {
               )
             }
           >
-            <option value="">
-              All Customers
-            </option>
+            <option value="">{t("customers.allCustomers")}</option>
             <option value="active">
               Active Debt
             </option>
@@ -419,7 +416,7 @@ function Customers() {
         </div>
         {loading ? (
           <div className="table-state">
-            Loading customers...
+            {t("customers.loading")}
           </div>
         ) : error ? (
           <div className="table-state table-error">
@@ -440,24 +437,19 @@ function Customers() {
             <h3>
               No customers found
             </h3>
-            <p>
-              Credit customers will
-              appear here.
-            </p>
+            <p>{t("customers.noCustomersDesc")}</p>
           </div>
         ) : (
           <div className="table-wrapper">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Customer</th>
-                  <th>Phone</th>
-                  <th>Credits</th>
-                  <th>
-                    Outstanding Debt
-                  </th>
-                  <th>Status</th>
-                  <th>Actions</th>
+                  <th>{t("customers.col.customer")}</th>
+                  <th>{t("customers.col.phone")}</th>
+                  <th>{t("customers.col.credits")}</th>
+                  <th>{t("customers.outstanding")}</th>
+                  <th>{t("customers.col.status")}</th>
+                  <th>{t("customers.col.actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -603,12 +595,10 @@ function Customers() {
               <div>
                 <h2>
                   {editingCustomer
-                    ? "Edit Customer"
-                    : "Add Customer"}
+                    ? t("customers.form.editTitle") : t("customers.form.addTitle")}
                 </h2>
                 <p>
-                  Customer information
-                  for credit purchases.
+                  {t("customers.form.subtitle")}
                 </p>
               </div>
               <button
@@ -634,19 +624,19 @@ function Customers() {
                 </div>
               )}
               <CustomerField
-                label="Customer Name"
+                label={t("customers.form.customerName")}
                 name="name"
                 value={form.name}
                 onChange={
                   handleChange
                 }
-                placeholder="Ahmad Ali"
+                placeholder={t("customers.form.namePlaceholder")}
                 error={
                   formErrors.name
                 }
               />
               <CustomerField
-                label="Phone Number"
+                label={t("customers.form.phone")}
                 name="phone_number"
                 value={
                   form.phone_number
@@ -654,15 +644,13 @@ function Customers() {
                 onChange={
                   handleChange
                 }
-                placeholder="07701234567"
+                placeholder={t("customers.form.phonePlaceholder")}
                 error={
                   formErrors.phone_number
                 }
               />
               <div className="form-field">
-                <label>
-                  Description
-                </label>
+                <label>{t("customers.form.description")}</label>
                 <textarea
                   name="description"
                   value={
@@ -671,7 +659,7 @@ function Customers() {
                   onChange={
                     handleChange
                   }
-                  placeholder="Optional notes about this customer..."
+                  placeholder={t("customers.form.descPlaceholder")}
                   rows="4"
                 />
               </div>
@@ -691,10 +679,7 @@ function Customers() {
                   disabled={saving}
                 >
                   {saving
-                    ? "Saving..."
-                    : editingCustomer
-                      ? "Save Changes"
-                      : "Add Customer"}
+                    ? t("customers.form.saving") : editingCustomer ? t("customers.form.saveChanges") : t("customers.form.addTitle")}
                 </button>
               </div>
             </form>

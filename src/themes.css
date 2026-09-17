@@ -1,0 +1,414 @@
+/* ============================================================
+   THEME VARIABLES
+   ============================================================ */
+
+/* Default / Minimalism: Clean white + light blue accents */
+:root,
+[data-theme="minimalism"] {
+  --bg-main: #f0f4f8;
+  --bg-surface: #ffffff;
+  --bg-sidebar: #1e2d3d;        /* Dark navy sidebar */
+  --bg-sidebar-hover: rgba(255,255,255,0.10);
+  --bg-hover: #edf2f7;
+
+  --text-main: #1a202c;
+  --text-muted: #718096;
+  --text-sidebar: #a0aec0;       /* Light text on dark sidebar */
+  --text-sidebar-active: #ffffff;
+
+  --primary: #3b9edd;            /* Clean sky blue */
+  --primary-hover: #2d8cc7;
+  --primary-light: #ebf5fb;
+
+  --border-color: #e2e8f0;
+  --border-radius: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-sm: 6px;
+  --border-width: 1px;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.07);
+}
+
+/* Brutalism: Structured gray tones with sharp edges */
+[data-theme="brutalism"] {
+  --bg-main: #d1d5db;
+  --bg-surface: #f9fafb;
+  --bg-sidebar: #374151;         /* Medium-dark sidebar, not pitch black */
+  --bg-sidebar-hover: rgba(255,255,255,0.12);
+  --bg-hover: #e5e7eb;
+
+  --text-main: #111827;
+  --text-muted: #4b5563;
+  --text-sidebar: #d1d5db;
+  --text-sidebar-active: #ffffff;
+
+  --primary: #374151;            /* Charcoal as primary */
+  --primary-hover: #1f2937;
+  --primary-light: #e5e7eb;
+
+  --border-color: #374151;
+  --border-radius: 0px;
+  --border-radius-lg: 0px;
+  --border-radius-sm: 0px;
+  --border-width: 2px;
+
+  --shadow-sm: 3px 3px 0px #111827;
+  --shadow-md: 5px 5px 0px #111827;
+}
+
+/* ============================================================
+   GLOBAL BASE OVERRIDES
+   ============================================================ */
+body {
+  background: var(--bg-main) !important;
+  color: var(--text-main) !important;
+}
+
+/* ============================================================
+   SIDEBAR — override the hardcoded dark gradient
+   ============================================================ */
+.sidebar {
+  background: var(--bg-sidebar) !important;
+  border-right: var(--border-width) solid var(--border-color) !important;
+}
+.sidebar-logo h2,
+.sidebar-logo span,
+.sidebar-user-info strong,
+.sidebar-user-info span,
+.nav-section-title {
+  color: var(--text-sidebar) !important;
+}
+.sidebar-bottom {
+  border-top: 1px solid rgba(255,255,255,0.12) !important;
+}
+.nav-item {
+  color: var(--text-sidebar) !important;
+  border-radius: var(--border-radius) !important;
+}
+.nav-item:hover {
+  color: var(--text-sidebar-active) !important;
+  background: var(--bg-sidebar-hover) !important;
+}
+.nav-item-active {
+  color: var(--text-sidebar-active) !important;
+  background: var(--primary) !important;
+  box-shadow: none !important;
+  border-radius: var(--border-radius) !important;
+}
+[data-theme="brutalism"] .nav-item-active {
+  border: 2px solid #ffffff !important;
+}
+
+/* Logo icon */
+.logo-icon {
+  background: var(--primary) !important;
+  border-radius: var(--border-radius) !important;
+}
+[data-theme="brutalism"] .logo-icon {
+  border: 2px solid #ffffff !important;
+}
+
+/* User avatar */
+.user-avatar,
+.profile-avatar {
+  background: var(--primary) !important;
+  border-radius: var(--border-radius) !important;
+}
+
+/* ============================================================
+   TOPBAR
+   ============================================================ */
+.topbar {
+  background: var(--bg-surface) !important;
+  border-bottom: var(--border-width) solid var(--border-color) !important;
+  backdrop-filter: none !important;
+}
+.topbar-left h1 {
+  color: var(--text-main) !important;
+}
+.topbar-left p,
+.topbar-search {
+  color: var(--text-muted) !important;
+}
+.topbar-search {
+  background: var(--bg-hover) !important;
+  border: var(--border-width) solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+}
+.topbar-search input {
+  background: transparent !important;
+  color: var(--text-main) !important;
+  border: 0 !important;
+}
+.notification-button {
+  background: var(--bg-surface) !important;
+  border: var(--border-width) solid var(--border-color) !important;
+  color: var(--text-muted) !important;
+  border-radius: var(--border-radius) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* ============================================================
+   PAGE BACKGROUND
+   ============================================================ */
+.app-shell,
+.page-content {
+  background: var(--bg-main) !important;
+}
+
+/* ============================================================
+   CARDS / SURFACES
+   ============================================================ */
+.dashboard-card,
+.dashboard-panel,
+.settings-section,
+.app-modal,
+.data-table-wrapper,
+.auth-card,
+.placeholder-card {
+  background: var(--bg-surface) !important;
+  border: var(--border-width) solid var(--border-color) !important;
+  border-radius: var(--border-radius-lg) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+.dashboard-card-content strong,
+.dashboard-card-content h2,
+.panel-header h2 {
+  color: var(--text-main) !important;
+}
+.dashboard-card-content span,
+.panel-header p {
+  color: var(--text-muted) !important;
+}
+
+/* ============================================================
+   ICON BOXES
+   ============================================================ */
+.dashboard-card-icon,
+.settings-heading-icon,
+.monitoring-field-icon,
+.storage-setting-icon,
+.row-icon,
+.product-icon {
+  background: var(--primary-light) !important;
+  color: var(--primary) !important;
+  border-radius: var(--border-radius) !important;
+}
+[data-theme="brutalism"] .dashboard-card-icon,
+[data-theme="brutalism"] .settings-heading-icon,
+[data-theme="brutalism"] .monitoring-field-icon,
+[data-theme="brutalism"] .storage-setting-icon,
+[data-theme="brutalism"] .row-icon,
+[data-theme="brutalism"] .product-icon {
+  border: 2px solid var(--border-color) !important;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.primary-button,
+.primary-action-button {
+  background: var(--primary) !important;
+  color: #ffffff !important;
+  border-radius: var(--border-radius) !important;
+  border: var(--border-width) solid var(--primary) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+.primary-button:hover,
+.primary-action-button:hover {
+  background: var(--primary-hover) !important;
+  border-color: var(--primary-hover) !important;
+}
+.primary-button *,
+.primary-action-button * {
+  color: #ffffff !important;
+}
+
+.secondary-button,
+.select-button {
+  background: var(--bg-surface) !important;
+  color: var(--text-main) !important;
+  border: var(--border-width) solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+}
+.secondary-button:hover,
+.select-button:hover {
+  background: var(--bg-hover) !important;
+}
+
+/* ============================================================
+   INPUTS
+   ============================================================ */
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  background: var(--bg-surface) !important;
+  color: var(--text-main) !important;
+  border: var(--border-width) solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+}
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--primary) !important;
+  outline: none !important;
+}
+input::placeholder {
+  color: var(--text-muted) !important;
+}
+
+label {
+  color: var(--text-main) !important;
+}
+
+/* ============================================================
+   TABLE
+   ============================================================ */
+.data-table th {
+  background: var(--bg-hover) !important;
+  color: var(--text-main) !important;
+  border-bottom: var(--border-width) solid var(--border-color) !important;
+}
+.data-table td {
+  color: var(--text-main) !important;
+  border-bottom: var(--border-width) solid var(--border-color) !important;
+}
+
+/* ============================================================
+   FORM ELEMENTS / MODALS
+   ============================================================ */
+.form-field label {
+  color: var(--text-main) !important;
+}
+.modal-header h2,
+.modal-header p {
+  color: var(--text-main) !important;
+}
+.modal-header p {
+  color: var(--text-muted) !important;
+}
+.app-modal {
+  background: var(--bg-surface) !important;
+}
+.modal-backdrop {
+  background: rgba(0,0,0,0.4) !important;
+}
+
+/* ============================================================
+   SETTINGS PAGE
+   ============================================================ */
+.settings-heading h3 {
+  color: var(--text-main) !important;
+}
+.settings-heading p {
+  color: var(--text-muted) !important;
+}
+.settings-section-header,
+.storage-setting-item {
+  border-bottom: var(--border-width) solid var(--border-color) !important;
+}
+.storage-setting-info strong {
+  color: var(--text-main) !important;
+}
+.storage-setting-info span,
+.storage-setting-id {
+  color: var(--text-muted) !important;
+}
+.monitoring-toggle-row {
+  background: var(--bg-hover) !important;
+  border-radius: var(--border-radius) !important;
+}
+.monitoring-toggle-row strong {
+  color: var(--text-main) !important;
+}
+.monitoring-toggle-row span {
+  color: var(--text-muted) !important;
+}
+.monitoring-field {
+  background: var(--bg-hover) !important;
+  border: var(--border-width) solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+}
+.monitoring-field label {
+  color: var(--text-main) !important;
+}
+.monitoring-field > div:nth-child(2) span {
+  color: var(--text-muted) !important;
+}
+.system-info-item {
+  background: var(--bg-hover) !important;
+  border-radius: var(--border-radius) !important;
+}
+.system-info-item span {
+  color: var(--text-muted) !important;
+}
+.system-info-item strong {
+  color: var(--text-main) !important;
+}
+
+/* ============================================================
+   TOGGLE SWITCH
+   ============================================================ */
+.settings-switch input:checked + .settings-slider {
+  background: var(--primary) !important;
+}
+[data-theme="brutalism"] .settings-slider {
+  background: #9ca3af !important;
+}
+[data-theme="brutalism"] .settings-switch input:checked + .settings-slider {
+  background: var(--primary) !important;
+}
+
+/* ============================================================
+   BRUTALISM SPECIFIC — strip all curves, add box shadows
+   ============================================================ */
+[data-theme="brutalism"] * {
+  border-radius: 0 !important;
+}
+[data-theme="brutalism"] .dashboard-card,
+[data-theme="brutalism"] .dashboard-panel,
+[data-theme="brutalism"] .settings-section,
+[data-theme="brutalism"] .app-modal {
+  box-shadow: var(--shadow-md) !important;
+  border: 2px solid var(--border-color) !important;
+}
+[data-theme="brutalism"] .primary-button,
+[data-theme="brutalism"] .primary-action-button {
+  box-shadow: 3px 3px 0 #111827 !important;
+}
+[data-theme="brutalism"] .primary-button:hover,
+[data-theme="brutalism"] .primary-action-button:hover {
+  box-shadow: 1px 1px 0 #111827 !important;
+  transform: translate(2px, 2px);
+}
+[data-theme="brutalism"] .notification-button {
+  border: 2px solid var(--border-color) !important;
+  box-shadow: 2px 2px 0 #111827 !important;
+}
+
+/* ============================================================
+   CUSTOMER AVATAR
+   ============================================================ */
+.customer-avatar {
+  background: var(--primary) !important;
+  color: #ffffff !important;
+  border-radius: var(--border-radius) !important;
+}
+
+/* ============================================================
+   PAYMENT BADGE
+   ============================================================ */
+.payment-badge {
+  border-radius: var(--border-radius-sm) !important;
+}
+
+/* ============================================================
+   PAGE HEADERS
+   ============================================================ */
+.page-header h1 {
+  color: var(--text-main) !important;
+}
+.page-header p {
+  color: var(--text-muted) !important;
+}

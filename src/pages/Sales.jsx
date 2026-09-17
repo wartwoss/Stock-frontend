@@ -31,6 +31,7 @@ import {
   getCustomers,
   createCustomer,
 } from "../api/customers";
+import { useExchangeRate } from "../contexts/ExchangeRateContext";
 import {
   createCredit,
 } from "../api/credits";
@@ -66,6 +67,9 @@ function createEmptyForm(defaultStorageId = "") {
     customer_name: "",
     phone_number: "",
     description: "",
+    warranty_months: "",
+    currency: "USD",
+    exchange_rate_per_100: "150000",
     down_payment: "0",
     number_of_payments: "",
     first_due_date: "",
@@ -166,24 +170,16 @@ function Sales() {
     selectedInventory?.quantity_in_stock ??
       0
   );
-  const totalPrice =
-    Number(form.selling_price || 0) *
-    Number(form.quantity || 0);
-  const remainingDebt =
-    Math.max(
-      0,
-      totalPrice -
-        Number(
-          form.down_payment || 0
-        )
-    );
-  const estimatedInstallment =
-    Number(form.number_of_payments) > 0
-      ? remainingDebt /
-        Number(
-          form.number_of_payments
-        )
-      : 0;
+  const basePrice = Number(form.selling_price || 0);
+  const qty = Number(form.quantity || 0);
+  const isIqd = form.currency === "IQD";
+  const rate = Number(form.exchange_rate_per_100 || 150000) / 100;
+  
+  const unitPriceConverted = isIqd ? basePrice * rate : basePrice;
+  const totalPrice = unitPriceConverted * qty;
+  
+  const remainingDebt = Math.max(0, totalPrice - Number(form.down_payment || 0));
+  const estimatedInstallment = Number(form.number_of_payments) > 0 ? remainingDebt / Number(form.number_of_payments) : 0;
   const filteredSales =
     useMemo(() => {
       const value =
@@ -214,9 +210,14 @@ function Sales() {
       search,
       typeFilter,
     ]);
+  const { exchangeRate } = useExchangeRate();
+
   function openModal() {
     const defaultStorage = getStoredStorageId(storages);
-    setForm(createEmptyForm(defaultStorage));
+    const newForm = createEmptyForm(defaultStorage);
+    newForm.currency = "USD";
+    newForm.exchange_rate_per_100 = Math.round(exchangeRate || 150000).toString();
+    setForm(newForm);
     setFormError("");
     setModalOpen(true);
   }
@@ -393,14 +394,12 @@ function Sales() {
           Number(
             form.quantity
           ),
-        selling_price:
-          Number(
-            form.selling_price
-          ),
-        payment_type:
-          form.payment_type,
-        sale_date:
-          form.sale_date,
+        selling_price: unitPriceConverted,
+        payment_type: form.payment_type,
+        sale_date: form.sale_date,
+        currency: form.currency,
+        exchange_rate_per_100: Number(form.exchange_rate_per_100),
+        warranty_months: form.warranty_months ? Number(form.warranty_months) : null,
       };
       if (customerId) {
         salePayload.customer_id =
@@ -642,14 +641,14 @@ function Sales() {
                         {sale.quantity}
                       </td>
                       <td>
-                        {formatMoney(
-                          sale.selling_price
+                        {formatCurrency(
+                          sale.selling_price, sale.currency
                         )}
                       </td>
                       <td>
                         <strong>
-                          {formatMoney(
-                            sale.total_price
+                          {formatCurrency(
+                            sale.total_price, sale.currency
                           )}
                         </strong>
                       </td>
@@ -878,7 +877,7 @@ function Sales() {
                   Total Sale Amount
                 </span>
                 <strong>
-                  {formatMoney(
+                  {formatCurrency(
                     totalPrice
                   )}
                 </strong>
@@ -1171,8 +1170,8 @@ function Sales() {
                         Remaining Debt
                       </span>
                       <strong>
-                        {formatMoney(
-                          remainingDebt
+                        {formatCurrency(
+                          remainingDebt, form.currency
                         )}
                       </strong>
                     </div>
@@ -1181,8 +1180,8 @@ function Sales() {
                         Estimated Installment
                       </span>
                       <strong>
-                        {formatMoney(
-                          estimatedInstallment
+                        {formatCurrency(
+                          estimatedInstallment, form.currency
                         )}
                       </strong>
                     </div>
@@ -1343,14 +1342,14 @@ function PaymentBadge({
     </span>
   );
 }
-function formatMoney(value) {
-  return new Intl.NumberFormat(
-    "en-US",
-    {
-      style: "currency",
-      currency: "USD",
-    }
-  ).format(Number(value ?? 0));
+function formatCurrency(value, currency = "USD") {
+  if (currency === "IQD") {
+    return Math.round(Number(value ?? 0)).toLocaleString("en-US") + " IQD";
+  }
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(Number(value ?? 0));
 }
 function formatDate(value) {
   if (!value) return "-";

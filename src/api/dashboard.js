@@ -1,5 +1,8 @@
-export async function getDashboard() {
-  const response = await fetch("/api/dashboard", {
+export async function getDashboard(filters = {}) {
+  const queryParams = new URLSearchParams(filters).toString();
+  const url = queryParams ? `/api/dashboard?${queryParams}` : "/api/dashboard";
+  
+  const response = await fetch(url, {
     headers: {
       Accept: "application/json",
     },

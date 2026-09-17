@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   useEffect,
   useMemo,
@@ -9,7 +10,6 @@ import {
   Eye,
   WalletCards,
   AlertTriangle,
-  CheckCircle2,
   Clock3,
   Package,
   UserRound,
@@ -39,6 +39,7 @@ function getToday() {
   return `${year}-${month}-${day}`;
 }
 function Credits() {
+  const { t } = useTranslation();
   const [credits, setCredits] =
     useState([]);
   const [upcoming, setUpcoming] =
@@ -106,7 +107,7 @@ function Credits() {
       setUpcoming(upcomingData);
       setOverdue(overdueData);
       setCompleted(completedData);
-    } catch (err) {
+    } catch {
       setError(
         "Could not load credit information."
       );
@@ -188,15 +189,14 @@ function Credits() {
       search,
     ]);
   const totalOutstanding =
-    credits.reduce(
-      (total, credit) =>
-        total +
-        Number(
-          credit.remaining_debt ??
-            0
-        ),
-      0
-    );
+    credits.reduce((total, credit) => {
+      let amount = Number(credit.remaining_debt ?? 0);
+      if (credit.currency === "IQD") {
+        const rate = Number(credit.exchange_rate_per_100 ?? 150000) / 100;
+        amount = amount / rate;
+      }
+      return total + amount;
+    }, 0);
   async function openDetails(
     credit
   ) {
@@ -209,7 +209,7 @@ function Credits() {
           credit.id
         );
       setPayments(data);
-    } catch (err) {
+    } catch {
       setPayments([]);
     } finally {
       setPaymentsLoading(false);
@@ -309,13 +309,9 @@ function Credits() {
     <div className="credits-page">
       <div className="page-toolbar">
         <div>
-          <h2>
-            Credit Accounts
-          </h2>
+          <h2>{t("credits.title")}</h2>
           <p>
-            Track installment agreements,
-            outstanding debt and due
-            payments.
+            {t("credits.subtitle")}
           </p>
         </div>
       </div>
@@ -326,7 +322,7 @@ function Credits() {
               size={20}
             />
           }
-          title="Total Credits"
+          title={t("credits.totalCredits")}
           value={credits.length}
         />
         <CreditSummaryCard
@@ -335,9 +331,9 @@ function Credits() {
               size={20}
             />
           }
-          title="Outstanding Debt"
+          title={t("credits.outstandingDebt")}
           value={
-            formatMoney(
+            formatCurrency(
               totalOutstanding
             )
           }
@@ -346,7 +342,7 @@ function Credits() {
           icon={
             <Clock3 size={20} />
           }
-          title="Upcoming"
+          title={t("credits.upcoming")}
           value={upcoming.length}
         />
         <CreditSummaryCard
@@ -355,7 +351,7 @@ function Credits() {
               size={20}
             />
           }
-          title="Overdue"
+          title={t("credits.overdue")}
           value={overdue.length}
         />
       </section>
@@ -363,14 +359,14 @@ function Credits() {
         <div className="credits-controls">
           <div className="credit-tabs">
             <CreditTab
-              label="All"
+              label={t("credits.tabs.all")}
               value="all"
               selected={filter}
               count={credits.length}
               onClick={setFilter}
             />
             <CreditTab
-              label="Active"
+              label={t("credits.tabs.active")}
               value="active"
               selected={filter}
               count={
@@ -379,21 +375,21 @@ function Credits() {
               onClick={setFilter}
             />
             <CreditTab
-              label="Upcoming"
+              label={t("credits.tabs.upcoming")}
               value="upcoming"
               selected={filter}
               count={upcoming.length}
               onClick={setFilter}
             />
             <CreditTab
-              label="Overdue"
+              label={t("credits.tabs.overdue")}
               value="overdue"
               selected={filter}
               count={overdue.length}
               onClick={setFilter}
             />
             <CreditTab
-              label="Completed"
+              label={t("credits.tabs.completed")}
               value="completed"
               selected={filter}
               count={completed.length}
@@ -416,7 +412,7 @@ function Credits() {
         </div>
         {loading ? (
           <div className="table-state">
-            Loading credits...
+            {t("credits.loading")}
           </div>
         ) : error ? (
           <div className="table-state table-error">
@@ -449,15 +445,15 @@ function Credits() {
             <table className="data-table credit-table">
               <thead>
                 <tr>
-                  <th>Customer</th>
-                  <th>Appliance</th>
-                  <th>Total</th>
-                  <th>Remaining</th>
-                  <th>Installment</th>
-                  <th>Progress</th>
-                  <th>Next Due</th>
-                  <th>Status</th>
-                  <th>Actions</th>
+                  <th>{t("credits.col.customer")}</th>
+                  <th>{t("credits.col.appliance")}</th>
+                  <th>{t("credits.col.total")}</th>
+                  <th>{t("credits.col.remaining")}</th>
+                  <th>{t("credits.col.installment")}</th>
+                  <th>{t("credits.col.progress")}</th>
+                  <th>{t("credits.col.nextDue")}</th>
+                  <th>{t("credits.col.status")}</th>
+                  <th>{t("credits.col.actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -529,20 +525,20 @@ function Credits() {
                           </div>
                         </td>
                         <td>
-                          {formatMoney(
-                            total
+                          {formatCurrency(
+                            total, credit.currency
                           )}
                         </td>
                         <td>
                           <strong className="credit-remaining">
-                            {formatMoney(
-                              remaining
+                            {formatCurrency(
+                              remaining, credit.currency
                             )}
                           </strong>
                         </td>
                         <td>
-                          {formatMoney(
-                            credit.installment_amount
+                          {formatCurrency(
+                            credit.installment_amount, credit.currency
                           )}
                         </td>
                         <td>
@@ -711,46 +707,42 @@ function Credits() {
                 </div>
                 <div className="credit-detail-grid">
                   <DetailValue
-                    title="Total Amount"
+                    title={t("credits.col.total", "Total Amount")}
                     value={
-                      formatMoney(
-                        selectedCredit.total_amount
-                      )
+                      formatCurrency(
+                        selectedCredit.total_amount, selectedCredit.currency)
                     }
                   />
                   <DetailValue
-                    title="Down Payment"
+                    title={t("sales.form.downPayment", "Down Payment")}
                     value={
-                      formatMoney(
-                        selectedCredit.down_payment
-                      )
+                      formatCurrency(
+                        selectedCredit.down_payment, selectedCredit.currency)
                     }
                   />
                   <DetailValue
-                    title="Remaining Debt"
+                    title={t("credits.outstandingDebt", "Remaining Debt")}
                     value={
-                      formatMoney(
-                        selectedCredit.remaining_debt
-                      )
+                      formatCurrency(
+                        selectedCredit.remaining_debt, selectedCredit.currency)
                     }
                     danger
                   />
                   <DetailValue
-                    title="Installment"
+                    title={t("credits.col.installment", "Installment")}
                     value={
-                      formatMoney(
-                        selectedCredit.installment_amount
-                      )
+                      formatCurrency(
+                        selectedCredit.installment_amount, selectedCredit.currency)
                     }
                   />
                   <DetailValue
-                    title="Payments Made"
+                    title={t("credits.col.progress", "Payments Made")}
                     value={
                       `${selectedCredit.payments_made ?? 0} / ${selectedCredit.number_of_payments ?? 0}`
                     }
                   />
                   <DetailValue
-                    title="Next Due"
+                    title={t("credits.col.nextDue", "Next Due")}
                     value={
                       formatDate(
                         selectedCredit.next_due_date
@@ -775,9 +767,7 @@ function Credits() {
                     >
                       <Banknote
                         size={16}
-                      />
-                      Record Payment
-                    </button>
+                      />{t("credits.form.recordPayment")}</button>
                   )}
                 </div>
                 <div className="profile-section-header credit-payment-heading">
@@ -811,7 +801,7 @@ function Credits() {
                           </div>
                           <div>
                             <strong>
-                              {formatMoney(
+                              {formatCurrency(
                                 payment.amount
                               )}
                             </strong>
@@ -854,9 +844,7 @@ function Credits() {
             >
               <div className="modal-header">
                 <div>
-                  <h2>
-                    Record Payment
-                  </h2>
+                  <h2>{t("credits.form.recordPayment")}</h2>
                   <p>
                     Credit #
                     {
@@ -886,20 +874,18 @@ function Credits() {
                 <div className="payment-credit-summary">
                   <div>
                     <span>
-                      Remaining
+                      {t("credits.form.remaining")}
                     </span>
                     <strong>
-                      {formatMoney(
-                        selectedCredit.remaining_debt
+                      {formatCurrency(
+                        selectedCredit.remaining_debt, selectedCredit.currency
                       )}
                     </strong>
                   </div>
                   <div>
-                    <span>
-                      Expected
-                    </span>
+                    <span>{t("credits.form.expected")}</span>
                     <strong>
-                      {formatMoney(
+                      {formatCurrency(
                         Math.min(
                           Number(
                             selectedCredit.installment_amount
@@ -907,7 +893,7 @@ function Credits() {
                           Number(
                             selectedCredit.remaining_debt
                           )
-                        )
+                        ), selectedCredit.currency
                       )}
                     </strong>
                   </div>
@@ -918,9 +904,7 @@ function Credits() {
                   </div>
                 )}
                 <div className="form-field">
-                  <label>
-                    Payment Amount
-                  </label>
+                  <label>{t("credits.form.paymentAmount")}</label>
                   <input
                     required
                     type="number"
@@ -942,9 +926,7 @@ function Credits() {
                   />
                 </div>
                 <div className="form-field">
-                  <label>
-                    Payment Date
-                  </label>
+                  <label>{t("credits.form.paymentDate")}</label>
                   <input
                     required
                     type="date"
@@ -970,17 +952,15 @@ function Credits() {
                     onClick={
                       closePaymentModal
                     }
-                  >
-                    Cancel
-                  </button>
+                  >{t("credits.form.cancel")}</button>
                   <button
                     type="submit"
                     className="primary-action-button"
                     disabled={saving}
                   >
                     {saving
-                      ? "Recording..."
-                      : "Record Payment"}
+                      ? t("credits.form.recording", "Recording...")
+                      : t("credits.form.recordPayment", "Record Payment")}
                   </button>
                 </div>
               </form>
@@ -1035,6 +1015,7 @@ function CreditTab({
 function CreditStatus({
   credit,
 }) {
+  const { t } = useTranslation();
   const remaining =
     Number(
       credit.remaining_debt ??
@@ -1049,11 +1030,7 @@ function CreditStatus({
     <span
       className={`credit-status ${status}`}
     >
-      {status === "completed"
-        ? "Completed"
-        : status === "overdue"
-          ? "Overdue"
-          : "Active"}
+      {t(`credits.status.${status}`, status)}
     </span>
   );
 }
@@ -1077,16 +1054,14 @@ function DetailValue({
     </div>
   );
 }
-function formatMoney(value) {
-  return new Intl.NumberFormat(
-    "en-US",
-    {
-      style: "currency",
-      currency: "USD",
-    }
-  ).format(
-    Number(value ?? 0)
-  );
+function formatCurrency(value, currency = "USD") {
+  if (currency === "IQD") {
+    return Math.round(Number(value ?? 0)).toLocaleString("en-US") + " IQD";
+  }
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(Number(value ?? 0));
 }
 function formatDate(value) {
   if (!value) {

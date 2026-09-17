@@ -1,25 +1,28 @@
 import { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
-const pageTitles = {
-  "/": "Dashboard",
-  "/sales": "Sales",
-  "/customers": "Customers",
-  "/credits": "Credits",
-  "/payments": "Payments",
-  "/appliances": "Appliances",
-  "/inventory": "Inventory",
-  "/notifications": "Notifications",
-  "/settings": "Settings",
-};
+
 function AppLayout() {
   const location = useLocation();
+  const { t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] =
     useState(false);
-  const title =
-    pageTitles[location.pathname] ??
-    "Management System";
+
+  const pageTitleKeys = {
+    "/": "pageTitles./",
+    "/sales": "pageTitles./sales",
+    "/customers": "pageTitles./customers",
+    "/credits": "pageTitles./credits",
+    "/appliances": "pageTitles./appliances",
+    "/inventory": "pageTitles./inventory",
+    "/notifications": "pageTitles./notifications",
+    "/settings": "pageTitles./settings",
+  };
+
+  const titleKey = pageTitleKeys[location.pathname];
+  const title = titleKey ? t(titleKey) : "Management System";
   return (
     <div className="app-shell">
       <div

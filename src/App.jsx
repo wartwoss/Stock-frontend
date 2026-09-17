@@ -3,6 +3,8 @@ import {
   Routes,
   Route,
 } from "react-router-dom";
+import Login from './pages/Login';
+import PrivateRoute from './components/PrivateRoute';
 import AppLayout from "./layouts/AppLayout";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import Dashboard from "./pages/Dashboard";
@@ -20,7 +22,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route element={<AppLayout />}>
+        <Route path="/login" element={<Login />} />
+        <Route element={<PrivateRoute><AppLayout /></PrivateRoute>}>
           <Route
             path="/"
             element={<Dashboard />}

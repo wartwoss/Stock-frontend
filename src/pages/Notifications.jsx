@@ -1,3 +1,4 @@
+﻿import { useTranslation } from "react-i18next";
 import {
   useEffect,
   useMemo,
@@ -23,6 +24,7 @@ import {
   deleteNotification,
 } from "../api/notifications";
 function Notifications() {
+  const { t } = useTranslation();
   const [
     notifications,
     setNotifications,
@@ -228,7 +230,7 @@ function Notifications() {
     <div className="notifications-page">
       <div className="page-toolbar">
         <div>
-          <h2>Notifications</h2>
+          <h2>{t("notifications.title")}</h2>
           <p>
             Track upcoming, due and
             overdue installment alerts.
@@ -316,7 +318,7 @@ function Notifications() {
         </div>
         {loading ? (
           <div className="table-state">
-            Loading notifications...
+            {t("notifications.loading")}
           </div>
         ) : error ? (
           <div className="table-state table-error">

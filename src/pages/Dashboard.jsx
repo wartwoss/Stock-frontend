@@ -1,29 +1,50 @@
+﻿import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import {
   Package,
   ShoppingCart,
   DollarSign,
   CreditCard,
-  WalletCards,
-  AlertTriangle,
+  
+  
   TrendingUp,
+  Calendar,
 } from "lucide-react";
 import { getDashboard } from "../api/dashboard";
 function Dashboard() {
+  const { t } = useTranslation();
   const [data, setData] = useState(null);
+  const [period, setPeriod] = useState("today");
   const [loading, setLoading] =
     useState(true);
   const [error, setError] =
     useState(null);
   useEffect(() => {
     loadDashboard();
-  }, []);
+  }, [period]);
   async function loadDashboard() {
     try {
       setLoading(true);
       setError(null);
-      const result =
-        await getDashboard();
+      
+      const now = new Date();
+      let dateFrom = "";
+      let dateTo = "";
+      
+      if (period === "today") {
+        dateFrom = now.toISOString().split("T")[0];
+        dateTo = dateFrom;
+      } else if (period === "month") {
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, "0");
+        dateFrom = `${year}-${month}-01`;
+        
+        // get last day of month
+        const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
+        dateTo = `${year}-${month}-${String(lastDay).padStart(2, "0")}`;
+      }
+      
+      const result = await getDashboard({ date_from: dateFrom, date_to: dateTo });
       setData(result);
     } catch (err) {
       setError(err.message);
@@ -34,14 +55,14 @@ function Dashboard() {
   if (loading) {
     return (
       <div className="page-state">
-        Loading dashboard...
+        {t("dashboard.loading")}
       </div>
     );
   }
   if (error) {
     return (
       <div className="page-state error-state">
-        <h3>Could not load dashboard</h3>
+        <h3>{t("dashboard.errorTitle")}</h3>
         <p>{error}</p>
         <button
           className="primary-button"
@@ -60,60 +81,46 @@ function Dashboard() {
     data?.credits ?? {};
   const cards = [
     {
-      title: "Stock Available",
-      value:
-        inventory.total_in_stock ?? 0,
-      subtitle: "Units currently in stock",
+      title: t("dashboard.stockAvailable"),
+      value: inventory.total_in_stock ?? 0,
+      subtitle: t("dashboard.unitsInStock"),
       icon: Package,
     },
     {
-      title: "Units Sold",
-      value:
-        inventory.total_sold ?? 0,
-      subtitle: "Total units sold",
+      title: t("dashboard.unitsSold"),
+      value: sales.total_units_sold ?? 0,
+      subtitle: period === "today" ? t("dashboard.unitsSoldToday") : t("dashboard.unitsSoldMonth"),
       icon: ShoppingCart,
     },
     {
-      title: "Total Sales",
-      value: formatMoney(
-        sales.total_sales_amount
-      ),
-      subtitle: `${
-        sales.total_sales ?? 0
-      } sales recorded`,
+      title: t("dashboard.totalSales"),
+      value: formatCurrency(sales.total_sales_amount),
+      subtitle: `${sales.total_sales ?? 0} sales ${period === "today" ? "today" : "this month"}`,
       icon: DollarSign,
     },
     {
-      title: "Outstanding Debt",
-      value: formatMoney(
-        credits.total_outstanding_debt
-      ),
-      subtitle: `${
-        credits.active_credits ?? 0
-      } active credits`,
+      title: t("dashboard.outstandingDebt"),
+      value: formatCurrency(credits.total_outstanding_debt),
+      subtitle: `${credits.active_credits ?? 0} active credits`,
       icon: CreditCard,
-    },
-    {
-      title: "Payments This Month",
-      value: formatMoney(
-        credits.monthly_payments_received
-      ),
-      subtitle:
-        credits.payment_month ??
-        "Current month",
-      icon: WalletCards,
-    },
-    {
-      title: "Overdue Customers",
-      value:
-        credits.overdue_customers_count ??
-        0,
-      subtitle: "Require attention",
-      icon: AlertTriangle,
     },
   ];
   return (
     <div className="dashboard-page">
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", backgroundColor: "#fff", padding: "6px 12px", borderRadius: "8px", border: "1px solid #e5e7eb" }}>
+          <Calendar size={16} color="#6b7280" />
+          <select 
+            value={period} 
+            onChange={(e) => setPeriod(e.target.value)}
+            style={{ border: "none", outline: "none", background: "transparent", fontWeight: "500", color: "#374151", cursor: "pointer" }}
+          >
+            <option value="today">{t("common.today")}</option>
+            <option value="month">{t("common.thisMonth")}</option>
+            <option value="all">{t("common.allTime")}</option>
+          </select>
+        </div>
+      </div>
       <section className="dashboard-cards">
         {cards.map((card) => {
           const Icon = card.icon;
@@ -150,7 +157,7 @@ function Dashboard() {
         <div className="dashboard-panel">
           <div className="panel-header">
             <div>
-              <h2>Low Stock</h2>
+              <h2>{t("dashboard.lowStock")}</h2>
               <p>
                 Appliances that may need
                 restocking
@@ -196,7 +203,7 @@ function Dashboard() {
               )
             ) : (
               <EmptyState
-                text="No low-stock appliances."
+                text={t("dashboard.noLowStock")}
               />
             )}
           </div>
@@ -204,13 +211,8 @@ function Dashboard() {
         <div className="dashboard-panel">
           <div className="panel-header">
             <div>
-              <h2>
-                Overdue Customers
-              </h2>
-              <p>
-                Customers with late
-                installments
-              </p>
+              <h2>{t("dashboard.overdueCustomers")}</h2>
+              <p>{t("dashboard.overdueCustomersDesc")}</p>
             </div>
             <span className="panel-count danger-count">
               {credits.overdue_customers_count ??
@@ -245,7 +247,7 @@ function Dashboard() {
                     </div>
                     <div className="debt-info">
                       <strong>
-                        {formatMoney(
+                        {formatCurrency(
                           customer.outstanding_debt
                         )}
                       </strong>
@@ -261,7 +263,7 @@ function Dashboard() {
               )
             ) : (
               <EmptyState
-                text="No overdue customers."
+                text={t("dashboard.noOverdueCustomers")}
               />
             )}
           </div>
@@ -278,7 +280,7 @@ function EmptyState({ text }) {
     </div>
   );
 }
-function formatMoney(value) {
+function formatCurrency(value, currency = "USD") { if (currency === "IQD") return Math.round(Number(value ?? 0)).toLocaleString("en-US") + " IQD";
   const amount =
     Number(value ?? 0);
   return new Intl.NumberFormat(

@@ -1,3 +1,4 @@
+﻿import { useTranslation } from "react-i18next";
 import {
   useEffect,
   useMemo,
@@ -25,7 +26,8 @@ import {
   getStorages,
 } from "../api/storages";
 function Inventory() {
-  const [inventory, setInventory] =
+    const { t } = useTranslation();
+const [inventory, setInventory] =
     useState([]);
   const [appliances, setAppliances] =
     useState([]);
@@ -238,10 +240,9 @@ function Inventory() {
     <div className="inventory-page">
       <div className="page-toolbar">
         <div>
-          <h2>Inventory</h2>
+          <h2>{t("inventory.title")}</h2>
           <p>
-            Track stock quantities across
-            your storage locations.
+            {t("inventory.subtitle")}
           </p>
         </div>
         <button
@@ -249,18 +250,18 @@ function Inventory() {
           onClick={openStockModal}
         >
           <Plus size={18} />
-          Add Stock
+          {t("inventory.stockIn")}
         </button>
       </div>
       <section className="inventory-summary">
         <SummaryCard
           icon={<Boxes size={20} />}
-          title="Purchased"
+          title={t("inventory.purchased")}
           value={totalPurchased}
         />
         <SummaryCard
           icon={<Package size={20} />}
-          title="Available"
+          title={t("inventory.available")}
           value={totalStock}
         />
         <SummaryCard
@@ -269,7 +270,7 @@ function Inventory() {
               size={20}
             />
           }
-          title="Sold"
+          title={t("inventory.sold")}
           value={totalSold}
         />
       </section>
@@ -299,7 +300,7 @@ function Inventory() {
               }
             >
               <option value="">
-                All Storage Locations
+                {t("inventory.allStorages")}
               </option>
               {storages.map(
                 (storage) => (
@@ -316,7 +317,7 @@ function Inventory() {
         </div>
         {loading ? (
           <div className="table-state">
-            Loading inventory...
+            {t("inventory.loading")}
           </div>
         ) : error ? (
           <div className="table-state table-error">
@@ -354,13 +355,13 @@ function Inventory() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Appliance</th>
-                  <th>Storage</th>
-                  <th>Purchased</th>
-                  <th>Sold</th>
-                  <th>Available</th>
+                  <th>{t("inventory.col.appliance")}</th>
+                  <th>{t("inventory.col.storage")}</th>
+                  <th>{t("inventory.purchased")}</th>
+                  <th>{t("inventory.col.sold")}</th>
+                  <th>{t("inventory.available")}</th>
                   <th>Status</th>
-                  <th>Action</th>
+                  <th>{t("inventory.action")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -469,7 +470,7 @@ function Inventory() {
           >
             <div className="modal-header">
               <div>
-                <h2>Add Stock</h2>
+                <h2>{t("inventory.stockIn")}</h2>
                 <p>
                   Add newly purchased
                   units to inventory.
@@ -496,9 +497,7 @@ function Inventory() {
                 </div>
               )}
               <div className="form-field">
-                <label>
-                  Appliance
-                </label>
+                <label>{t("inventory.form.appliance")}</label>
                 <select
                   required
                   value={
@@ -531,7 +530,7 @@ function Inventory() {
                         {
                           appliance.name
                         }{" "}
-                        —{" "}
+                        â€”{" "}
                         {
                           appliance.brand
                         }
@@ -541,9 +540,7 @@ function Inventory() {
                 </select>
               </div>
               <div className="form-field">
-                <label>
-                  Storage Location
-                </label>
+                <label>{t("inventory.form.storageLocation")}</label>
                 <select
                   required
                   value={
@@ -570,7 +567,7 @@ function Inventory() {
                         value={storage.id}
                       >
                         {storage.name}
-                        {" — "}
+                        {" â€” "}
                         {storage.location}
                       </option>
                     )
@@ -578,9 +575,7 @@ function Inventory() {
                 </select>
               </div>
               <div className="form-field">
-                <label>
-                  Quantity Added
-                </label>
+                <label>{t("inventory.form.quantityAdded")}</label>
                 <input
                   required
                   type="number"

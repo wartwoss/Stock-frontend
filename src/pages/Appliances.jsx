@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
 import {
   Plus,
@@ -21,7 +22,8 @@ const emptyForm = {
   date_added: "",
 };
 function Appliances() {
-  const [appliances, setAppliances] = useState([]);
+    const { t } = useTranslation();
+const [appliances, setAppliances] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -41,7 +43,7 @@ function Appliances() {
       const data = await getAppliances();
       setAppliances(data);
     } catch (err) {
-      setError("Could not load appliances.");
+      setError(t("appliances.couldNotLoad"));
     } finally {
       setLoading(false);
     }
@@ -163,10 +165,9 @@ function Appliances() {
     <div className="appliances-page">
       <div className="page-toolbar">
         <div>
-          <h2>Appliances</h2>
+          <h2>{t("appliances.title")}</h2>
           <p>
-            Manage the products available in your
-            system.
+            {t("appliances.subtitle")}
           </p>
         </div>
         <button
@@ -174,7 +175,7 @@ function Appliances() {
           onClick={openCreateModal}
         >
           <Plus size={18} />
-          Add Appliance
+          {t("appliances.addAppliance")}
         </button>
       </div>
       <div className="content-card">
@@ -183,7 +184,7 @@ function Appliances() {
             <Search size={18} />
             <input
               type="text"
-              placeholder="Search by name, brand or category..."
+              placeholder={t("common.searchPlace")}
               value={search}
               onChange={(event) =>
                 setSearch(event.target.value)
@@ -191,12 +192,12 @@ function Appliances() {
             />
           </div>
           <div className="result-count">
-            {filteredAppliances.length} appliances
+            {filteredAppliances.length} {t("common.resultCount")}
           </div>
         </div>
         {loading ? (
           <div className="table-state">
-            Loading appliances...
+            {t("appliances.loading")}
           </div>
         ) : error ? (
           <div className="table-state table-error">
@@ -213,7 +214,7 @@ function Appliances() {
             <div className="empty-icon">
               <Package size={28} />
             </div>
-            <h3>No appliances found</h3>
+            <h3>{t("appliances.noAppliances")}</h3>
             <p>
               Add your first appliance to start
               managing your stock.
@@ -222,20 +223,18 @@ function Appliances() {
               className="primary-action-button"
               onClick={openCreateModal}
             >
-              <Plus size={18} />
-              Add Appliance
-            </button>
+              <Plus size={18} />{t("appliances.form.addTitle")}</button>
           </div>
         ) : (
           <div className="table-wrapper">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Appliance</th>
-                  <th>Category</th>
-                  <th>Brand</th>
-                  <th>Purchase Price</th>
-                  <th>Date Added</th>
+                  <th>{t("appliances.col.appliance")}</th>
+                  <th>{t("appliances.col.category")}</th>
+                  <th>{t("appliances.col.brand")}</th>
+                  <th>{t("appliances.purchasePrice")}</th>
+                  <th>{t("appliances.dateAdded")}</th>
                   <th className="actions-column">
                     Actions
                   </th>
@@ -325,13 +324,11 @@ function Appliances() {
               <div>
                 <h2>
                   {editingAppliance
-                    ? "Edit Appliance"
-                    : "Add Appliance"}
+                    ? t("appliances.form.editTitle") : t("appliances.form.addTitle")}
                 </h2>
                 <p>
                   {editingAppliance
-                    ? "Update appliance information."
-                    : "Add a new product to the system."}
+                    ? t("appliances.form.updateDesc") : t("appliances.form.addDesc")}
                 </p>
               </div>
               <button
@@ -351,34 +348,34 @@ function Appliances() {
                 </div>
               )}
               <FormField
-                label="Appliance Name"
+                label={t("appliances.form.applianceName")}
                 name="name"
                 value={form.name}
                 onChange={handleChange}
-                placeholder="Samsung Refrigerator"
+                placeholder={t("appliances.form.namePlaceholder")}
                 error={formErrors.name}
               />
               <div className="form-grid">
                 <FormField
-                  label="Category"
+                  label={t("appliances.form.category")}
                   name="category"
                   value={form.category}
                   onChange={handleChange}
-                  placeholder="Refrigerator"
+                  placeholder={t("appliances.form.catPlaceholder")}
                   error={formErrors.category}
                 />
                 <FormField
-                  label="Brand"
+                  label={t("appliances.form.brand")}
                   name="brand"
                   value={form.brand}
                   onChange={handleChange}
-                  placeholder="Samsung"
+                  placeholder={t("appliances.form.brandPlaceholder")}
                   error={formErrors.brand}
                 />
               </div>
               <div className="form-grid">
                 <FormField
-                  label="Purchase Price"
+                  label={t("appliances.form.purchasePrice")}
                   name="purchase_price"
                   type="number"
                   step="0.01"
@@ -391,7 +388,7 @@ function Appliances() {
                   }
                 />
                 <FormField
-                  label="Date Added"
+                  label={t("appliances.form.dateAdded")}
                   name="date_added"
                   type="date"
                   value={form.date_added}
@@ -413,10 +410,7 @@ function Appliances() {
                   disabled={saving}
                 >
                   {saving
-                    ? "Saving..."
-                    : editingAppliance
-                      ? "Save Changes"
-                      : "Add Appliance"}
+                    ? t("appliances.form.saving") : editingAppliance ? t("appliances.form.saveChanges") : t("appliances.form.addTitle")}
                 </button>
               </div>
             </form>

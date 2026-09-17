@@ -1,3 +1,4 @@
+﻿import { useTranslation } from "react-i18next";
 import {
   useEffect,
   useMemo,
@@ -20,9 +21,8 @@ import {
   getPayments,
   recordPayment,
 } from "../api/payments";
-import {
-  getCredits,
-} from "../api/credits";
+import { getCredits } from "../api/credits";
+import { useExchangeRate } from "../contexts/ExchangeRateContext";
 function getToday() {
   const now = new Date();
   const year = now.getFullYear();
@@ -43,6 +43,7 @@ function getCurrentMonth() {
   return `${year}-${month}`;
 }
 function Payments() {
+  const { t } = useTranslation();
   const [payments, setPayments] =
     useState([]);
   const [credits, setCredits] =
@@ -209,13 +210,16 @@ function Payments() {
       dateFrom,
       dateTo,
     ]);
+  const { exchangeRate } = useExchangeRate();
+  const currentRate = exchangeRate || 150000;
+
   const totalReceived =
     filteredPayments.reduce(
-      (total, payment) =>
-        total +
-        Number(
-          payment.amount ?? 0
-        ),
+      (total, payment) => {
+        let amt = Number(payment.amount ?? 0);
+        if (payment.currency === 'IQD') amt = (amt * 100) / currentRate;
+        return total + amt;
+      },
       0
     );
   const currentMonth =
@@ -230,11 +234,11 @@ function Payments() {
           currentMonth
       )
       .reduce(
-        (total, payment) =>
-          total +
-          Number(
-            payment.amount ?? 0
-          ),
+        (total, payment) => {
+          let amt = Number(payment.amount ?? 0);
+          if (payment.currency === 'IQD') amt = (amt * 100) / currentRate;
+          return total + amt;
+        },
         0
       );
   const thisMonthCount =
@@ -359,7 +363,7 @@ function Payments() {
     <div className="payments-page">
       <div className="page-toolbar">
         <div>
-          <h2>Payments</h2>
+          <h2>{t("payments.title")}</h2>
           <p>
             Track installment payments
             received from customers.
@@ -393,7 +397,7 @@ function Payments() {
           }
           title="Total Received"
           value={
-            formatMoney(
+            formatCurrency(
               totalReceived
             )
           }
@@ -406,7 +410,7 @@ function Payments() {
           }
           title="This Month"
           value={
-            formatMoney(
+            formatCurrency(
               thisMonthTotal
             )
           }
@@ -440,7 +444,7 @@ function Payments() {
           </div>
           <div className="payment-date-filters">
             <div className="date-filter-field">
-              <span>From</span>
+              <span>{t("payments.from")}</span>
               <input
                 type="date"
                 value={dateFrom}
@@ -452,7 +456,7 @@ function Payments() {
               />
             </div>
             <div className="date-filter-field">
-              <span>To</span>
+              <span>{t("payments.to")}</span>
               <input
                 type="date"
                 value={dateTo}
@@ -479,7 +483,7 @@ function Payments() {
         </div>
         {loading ? (
           <div className="table-state">
-            Loading payments...
+            {t("payments.loading")}
           </div>
         ) : error ? (
           <div className="table-state table-error">
@@ -512,16 +516,16 @@ function Payments() {
             <table className="data-table payments-table">
               <thead>
                 <tr>
-                  <th>Payment</th>
-                  <th>Customer</th>
-                  <th>Appliance</th>
-                  <th>Credit</th>
-                  <th>Amount</th>
-                  <th>Date</th>
+                  <th>{t("payments.col.payment")}</th>
+                  <th>{t("payments.col.customer")}</th>
+                  <th>{t("payments.col.appliance")}</th>
+                  <th>{t("payments.col.credit")}</th>
+                  <th>{t("payments.col.amount")}</th>
+                  <th>{t("payments.col.date")}</th>
                   <th>
                     Remaining Debt
                   </th>
-                  <th>Action</th>
+                  <th>{t("payments.col.action")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -602,9 +606,7 @@ function Payments() {
                         </td>
                         <td>
                           <strong className="payment-amount-value">
-                            {formatMoney(
-                              payment.amount
-                            )}
+                            {formatCurrency(payment.amount, payment.currency)}
                           </strong>
                         </td>
                         <td>
@@ -618,7 +620,7 @@ function Payments() {
                           </div>
                         </td>
                         <td>
-                          {formatMoney(
+                          {formatCurrency(
                             credit
                               ?.remaining_debt ??
                               0
@@ -721,14 +723,12 @@ function Payments() {
                         }
                       >
                         #{credit.id}
-                        {" — "}
+                        {" â€” "}
                         {credit.customer
                           ?.name ??
                           "Unknown"}
-                        {" — "}
-                        {formatMoney(
-                          credit.remaining_debt
-                        )}
+                        {" â€” "}
+                        {formatCurrency(credit.remaining_debt, credit.currency)}
                       </option>
                     )
                   )}
@@ -766,7 +766,7 @@ function Payments() {
                         Remaining
                       </span>
                       <strong>
-                        {formatMoney(
+                        {formatCurrency(
                           selectedCredit.remaining_debt
                         )}
                       </strong>
@@ -776,7 +776,7 @@ function Payments() {
                         Installment
                       </span>
                       <strong>
-                        {formatMoney(
+                        {formatCurrency(
                           selectedCredit.installment_amount
                         )}
                       </strong>
@@ -796,7 +796,7 @@ function Payments() {
               )}
               <div className="form-field">
                 <label>
-                  Payment Amount
+                  Payment Amount ({selectedCredit ? selectedCredit.currency : '...'})
                 </label>
                 <input
                   required
@@ -914,9 +914,7 @@ function Payments() {
                       Payment Received
                     </span>
                     <strong>
-                      {formatMoney(
-                        selectedPayment.amount
-                      )}
+                      {formatCurrency(selectedPayment.amount, selectedPayment.currency)}
                     </strong>
                   </div>
                 </div>
@@ -983,7 +981,7 @@ function Payments() {
                     Debt
                   </span>
                   <strong>
-                    {formatMoney(
+                    {formatCurrency(
                       selectedPayment
                         .credit
                         ?.remaining_debt ??
@@ -1038,7 +1036,7 @@ function PaymentDetailValue({
     </div>
   );
 }
-function formatMoney(value) {
+function formatCurrency(value, currency = "USD") { if (currency === "IQD") return Math.round(Number(value ?? 0)).toLocaleString("en-US") + " IQD";
   return new Intl.NumberFormat(
     "en-US",
     {
