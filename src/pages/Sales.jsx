@@ -32,6 +32,7 @@ import {
   createCustomer,
 } from "../api/customers";
 import { useExchangeRate } from "../contexts/ExchangeRateContext";
+import { useTranslation } from "react-i18next";
 import {
   createCredit,
 } from "../api/credits";
@@ -76,6 +77,7 @@ function createEmptyForm(defaultStorageId = "") {
   };
 }
 function Sales() {
+  const { t } = useTranslation();
   const [sales, setSales] =
     useState([]);
   const [appliances, setAppliances] =
@@ -489,33 +491,31 @@ function Sales() {
           className="primary-action-button"
           onClick={openModal}
         >
-          <Plus size={18} />
-          New Sale
-        </button>
+          <Plus size={18} />{t("sales.newSale", "New Sale")}</button>
       </div>
       <section className="sales-summary">
         <SaleSummary
           icon={
             <ShoppingCart size={20} />
           }
-          title="Total Sales"
+          title={t("sales.metrics.totalSales", "Total Sales")}
           value={sales.length}
         />
         <SaleSummary
           icon={<Package size={20} />}
-          title="Units Sold"
+          title={t("sales.metrics.unitsSold", "Units Sold")}
           value={totalUnitsSold}
         />
         <SaleSummary
           icon={<Banknote size={20} />}
-          title="Cash Sales"
+          title={t("sales.metrics.cashSales", "Cash Sales")}
           value={cashSales}
         />
         <SaleSummary
           icon={
             <CreditCard size={20} />
           }
-          title="Credit Sales"
+          title={t("sales.metrics.creditSales", "Credit Sales")}
           value={creditSales}
         />
       </section>
@@ -584,23 +584,21 @@ function Sales() {
               className="primary-action-button"
               onClick={openModal}
             >
-              <Plus size={18} />
-              New Sale
-            </button>
+              <Plus size={18} />{t("sales.newSale", "New Sale")}</button>
           </div>
         ) : (
           <div className="table-wrapper">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Sale</th>
-                  <th>Storage</th>
-                  <th>Quantity</th>
-                  <th>Unit Price</th>
-                  <th>Total</th>
-                  <th>Payment</th>
-                  <th>Customer</th>
-                  <th>Date</th>
+                  <th>{t("sales.col.sale", "Sale")}</th>
+                  <th>{t("sales.col.storage", "Storage")}</th>
+                  <th>{t("sales.col.quantity", "Quantity")}</th>
+                  <th>{t("sales.col.unitPrice", "Unit Price")}</th>
+                  <th>{t("sales.col.total", "Total")}</th>
+                  <th>{t("sales.col.payment", "Payment")}</th>
+                  <th>{t("sales.col.customer", "Customer")}</th>
+                  <th>{t("sales.col.date", "Date")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -712,11 +710,8 @@ function Sales() {
           >
             <div className="modal-header">
               <div>
-                <h2>New Sale</h2>
-                <p>
-                  Record a new product
-                  sale.
-                </p>
+                <h2>{t("sales.newSale", "New Sale")}</h2>
+                <p>{t("sales.form.recordNewSale", "Record a new product sale.")}</p>
               </div>
               <button
                 className="modal-close"
@@ -854,38 +849,48 @@ function Sales() {
                   />
                 </div>
               </div>
-              <div className="form-field">
-                <label>
-                  Sale Date
-                </label>
-                <input
-                  required
-                  type="date"
-                  value={
-                    form.sale_date
-                  }
-                  onChange={(event) =>
-                    updateField(
-                      "sale_date",
-                      event.target.value
-                    )
-                  }
-                />
+              <div className="form-grid">
+                <div className="form-field">
+                  <label>{t("sales.form.saleDate", "Sale Date")}</label>
+                  <input
+                    required
+                    type="date"
+                    value={form.sale_date}
+                    onChange={(event) => updateField("sale_date", event.target.value)}
+                  />
+                </div>
+                <div className="form-field">
+                  <label>{t("sales.form.currency", "Currency")}</label>
+                  <select
+                    value={form.currency}
+                    onChange={(event) => updateField("currency", event.target.value)}
+                  >
+                    <option value="USD">USD ($)</option>
+                    <option value="IQD">IQD (Dinar)</option>
+                  </select>
+                </div>
               </div>
-              <div className="sale-total-box">
-                <span>
-                  Total Sale Amount
-                </span>
+
+              {form.currency === "IQD" && (
+                <div className="form-field">
+                  <label>{t("sales.form.exchangeRate", "Exchange Rate (100$ to X Dinar)")}</label>
+                  <input
+                    required
+                    type="number"
+                    min="1"
+                    value={form.exchange_rate_per_100}
+                    onChange={(event) => updateField("exchange_rate_per_100", event.target.value)}
+                  />
+                </div>
+              )}
+                            <div className="sale-total-box">
+                <span>{t("sales.form.totalAmount", "Total Sale Amount")}</span>
                 <strong>
-                  {formatCurrency(
-                    totalPrice
-                  )}
+                  {form.currency === "IQD" ? Math.round(totalPrice).toLocaleString() + " IQD" : formatCurrency(totalPrice, form.currency)}
                 </strong>
               </div>
               <div className="form-field">
-                <label>
-                  Payment Type
-                </label>
+                <label>{t("sales.form.paymentType", "Payment Type")}</label>
                 <div className="payment-type-options">
                   <button
                     type="button"
@@ -906,12 +911,8 @@ function Sales() {
                       size={19}
                     />
                     <div>
-                      <strong>
-                        Cash
-                      </strong>
-                      <span>
-                        Paid immediately
-                      </span>
+                      <strong>{t("sales.form.cash", "Cash")}</strong>
+                      <span>{t("sales.form.paidImmediately", "Paid immediately")}</span>
                     </div>
                   </button>
                   <button
@@ -933,78 +934,32 @@ function Sales() {
                       size={19}
                     />
                     <div>
-                      <strong>
-                        Credit
-                      </strong>
-                      <span>
-                        Installments
-                      </span>
+                      <strong>{t("sales.form.credit", "Credit")}</strong>
+                      <span>{t("sales.form.installments", "Installments")}</span>
                     </div>
                   </button>
                 </div>
               </div>
-              {/* CUSTOMER SECTION */}
+                            {/* CUSTOMER SECTION */}
               <div className="credit-sale-section">
                 <div className="credit-section-title">
-                  <UserRound
-                    size={18}
-                  />
-                  {form.payment_type === "cash"
-                    ? "Customer (Optional — For Warranty / Record)"
-                    : "Customer (Required for Credit Agreement)"}
+                  <UserRound size={18} />
+                  {t("sales.form.customerRequired", "Customer (Required)")}
                 </div>
                 <div className="customer-mode">
-                  {form.payment_type === "cash" && (
-                    <button
-                      type="button"
-                      className={
-                        form.customer_mode === "none"
-                          ? "active"
-                          : ""
-                      }
-                      onClick={() =>
-                        updateField(
-                          "customer_mode",
-                          "none"
-                        )
-                      }
-                    >
-                      Walk-in (No customer)
-                    </button>
-                  )}
                   <button
                     type="button"
-                    className={
-                      form.customer_mode ===
-                      "existing"
-                        ? "active"
-                        : ""
-                    }
-                    onClick={() =>
-                      updateField(
-                        "customer_mode",
-                        "existing"
-                      )
-                    }
+                    className={form.customer_mode === "existing" ? "active" : ""}
+                    onClick={() => updateField("customer_mode", "existing")}
                   >
-                    Existing Customer
+                    {t("sales.form.existingCustomer", "Existing Customer")}
                   </button>
                   <button
                     type="button"
-                    className={
-                      form.customer_mode ===
-                      "new"
-                        ? "active"
-                        : ""
-                    }
-                    onClick={() =>
-                      updateField(
-                        "customer_mode",
-                        "new"
-                      )
-                    }
+                    className={form.customer_mode === "new" ? "active" : ""}
+                    onClick={() => updateField("customer_mode", "new")}
                   >
-                    New Customer
+                    {t("sales.form.newCustomer", "New Customer")}
                   </button>
                 </div>
                 {form.customer_mode === "none" ? (
@@ -1038,14 +993,12 @@ function Sales() {
                   <>
                     <div className="form-grid">
                       <div className="form-field">
-                        <label>
-                          Customer Name
-                        </label>
+                        <label>{t("sales.form.customerName", "Customer Name")}</label>
                         <input
                           value={
                             form.customer_name
                           }
-                          placeholder="Ahmad Ali"
+                          placeholder={t("sales.form.namePlaceholder", "Ahmad Ali")}
                           onChange={(event) =>
                             updateField(
                               "customer_name",
@@ -1056,14 +1009,12 @@ function Sales() {
                         />
                       </div>
                       <div className="form-field">
-                        <label>
-                          Phone Number
-                        </label>
+                        <label>{t("sales.form.phoneNumber", "Phone Number")}</label>
                         <input
                           value={
                             form.phone_number
                           }
-                          placeholder="0770..."
+                          placeholder={t("sales.form.phonePlaceholder", "0770...")}
                           onChange={(event) =>
                             updateField(
                               "phone_number",
@@ -1075,21 +1026,21 @@ function Sales() {
                       </div>
                     </div>
                     <div className="form-field">
-                      <label>
-                        Description / Warranty Note
-                      </label>
+                      <label>{t("sales.form.warrantyMonths", "Warranty (Months)")}</label>
                       <input
-                        value={
-                          form.description
-                        }
-                        placeholder="Optional warranty or customer note"
-                        onChange={(event) =>
-                          updateField(
-                            "description",
-                            event.target
-                              .value
-                          )
-                        }
+                        type="number"
+                        min="0"
+                        value={form.warranty_months}
+                        placeholder={t("sales.form.eg12", "e.g. 12")}
+                        onChange={(event) => updateField("warranty_months", event.target.value)}
+                      />
+                    </div>
+                    <div className="form-field">
+                      <label>{t("sales.form.descWarrantyNote", "Description / Warranty Note")}</label>
+                      <input
+                        value={form.description}
+                        placeholder={t("sales.form.optionalNotePlaceholder", "Optional warranty or customer note")}
+                        onChange={(event) => updateField("description", event.target.value)}
                       />
                     </div>
                   </>
@@ -1103,13 +1054,11 @@ function Sales() {
                     <CreditCard
                       size={18}
                     />
-                    Installment Details
+                    {t("sales.installmentDetails", "Installment Details")}
                   </div>
                   <div className="form-grid">
                     <div className="form-field">
-                      <label>
-                        Down Payment
-                      </label>
+                      <label>{t("sales.form.downPayment", "Down Payment")}</label>
                       <input
                         type="number"
                         min="0"
@@ -1127,9 +1076,7 @@ function Sales() {
                       />
                     </div>
                     <div className="form-field">
-                      <label>
-                        Number of Payments
-                      </label>
+                      <label>{t("sales.form.numberOfPayments", "Number of Payments")}</label>
                       <input
                         type="number"
                         min="1"
@@ -1148,9 +1095,7 @@ function Sales() {
                     </div>
                   </div>
                   <div className="form-field">
-                    <label>
-                      First Due Date
-                    </label>
+                    <label>{t("sales.form.firstDueDate", "First Due Date")}</label>
                     <input
                       type="date"
                       value={
@@ -1166,9 +1111,7 @@ function Sales() {
                   </div>
                   <div className="credit-preview">
                     <div>
-                      <span>
-                        Remaining Debt
-                      </span>
+                      <span>{t("sales.form.remainingDebt", "Remaining Debt")}</span>
                       <strong>
                         {formatCurrency(
                           remainingDebt, form.currency
@@ -1176,9 +1119,7 @@ function Sales() {
                       </strong>
                     </div>
                     <div>
-                      <span>
-                        Estimated Installment
-                      </span>
+                      <span>{t("sales.form.estimatedInstallment", "Estimated Installment")}</span>
                       <strong>
                         {formatCurrency(
                           estimatedInstallment, form.currency
@@ -1194,7 +1135,7 @@ function Sales() {
                   className="secondary-button"
                   onClick={closeModal}
                 >
-                  Cancel
+                  {t("common.cancel", "Cancel")}
                 </button>
                 <button
                   type="submit"
@@ -1202,8 +1143,8 @@ function Sales() {
                   disabled={saving}
                 >
                   {saving
-                    ? "Processing..."
-                    : "Complete Sale"}
+                    ? t("sales.form.processing", "Processing...")
+                    : t("sales.form.completeSale", "Complete Sale")}
                 </button>
               </div>
             </form>
@@ -1224,7 +1165,7 @@ function Sales() {
                 <Search size={18} />
                 <input
                   type="text"
-                  placeholder="Search appliances..."
+                  placeholder={t("sales.form.searchAppliances", "Search appliances...")}
                   value={applianceSearch}
                   onChange={(e) => setApplianceSearch(e.target.value)}
                   autoFocus
