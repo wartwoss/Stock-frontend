@@ -525,7 +525,7 @@ function Sales() {
             <Search size={18} />
             <input
               type="text"
-              placeholder="Search appliance, customer or storage..."
+              placeholder={t("sales.searchPlace", "Search appliance, customer or storage...")}
               value={search}
               onChange={(event) =>
                 setSearch(
@@ -576,10 +576,8 @@ function Sales() {
                 size={28}
               />
             </div>
-            <h3>No sales yet</h3>
-            <p>
-              Record your first sale.
-            </p>
+            <h3>{t("sales.noSales", "No sales yet")}</h3>
+            <p>{t("sales.noSalesDesc", "Record your first sale.")}</p>
             <button
               className="primary-action-button"
               onClick={openModal}
@@ -731,9 +729,7 @@ function Sales() {
               )}
               <div className="form-grid">
                 <div className="form-field">
-                  <label>
-                    Appliance
-                  </label>
+                  <label>{t("sales.form.appliance", "Appliance")}</label>
                   <button
                     type="button"
                     className="select-button"
@@ -741,14 +737,12 @@ function Sales() {
                     style={{ textAlign: "left", padding: "8px 12px", border: "1px solid #d1d5db", borderRadius: "6px", backgroundColor: "#fff", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
                   >
                     {form.appliance_id
-                      ? appliances.find((a) => String(a.id) === String(form.appliance_id))?.name || "Select appliance"
-                      : "Select appliance"}
+                      ? appliances.find((a) => String(a.id) === String(form.appliance_id))?.name || t("sales.form.selectAppliance", "Select appliance")
+                      : t("sales.form.selectAppliance", "Select appliance")}
                   </button>
                 </div>
                 <div className="form-field">
-                  <label>
-                    Storage
-                  </label>
+                  <label>{t("sales.form.storage", "Storage")}</label>
                   <select
                     required
                     value={
@@ -762,7 +756,7 @@ function Sales() {
                     }
                   >
                     <option value="">
-                      Select storage
+                      {t("sales.form.selectStorage", "Select storage")}
                     </option>
                     {storages.map(
                       (storage) => (
@@ -809,9 +803,7 @@ function Sales() {
                 )}
               <div className="form-grid">
                 <div className="form-field">
-                  <label>
-                    Quantity
-                  </label>
+                  <label>{t("sales.form.quantity", "Quantity")}</label>
                   <input
                     required
                     type="number"
@@ -828,9 +820,7 @@ function Sales() {
                   />
                 </div>
                 <div className="form-field">
-                  <label>
-                    Selling Price
-                  </label>
+                  <label>{t("sales.form.sellingPrice", "Selling Price")}</label>
                   <input
                     required
                     type="number"
@@ -1157,7 +1147,7 @@ function Sales() {
         <div className="modal-backdrop" style={{ zIndex: 1100 }} onMouseDown={() => setApplianceSelectOpen(false)}>
           <div className="app-modal" onMouseDown={(e) => e.stopPropagation()} style={{ maxWidth: '500px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', height: '80vh' }}>
             <div className="modal-header" style={{ flexShrink: 0 }}>
-              <h2>Select Appliance</h2>
+              <h2>{t("sales.form.selectAppliance", "Select appliance")}</h2>
               <button type="button" className="modal-close" onClick={() => setApplianceSelectOpen(false)}><X size={20} /></button>
             </div>
             <div style={{ padding: '0 20px 10px 20px', flexShrink: 0 }}>

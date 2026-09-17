@@ -185,7 +185,8 @@
       "namePlaceholder": "ئەحمەد عەلی",
       "phonePlaceholder": "0770...",
       "recordNewSale": "فرۆشتنێکی نوێی بەرهەم تۆمار بکە.",
-      "availableStock": "کۆگای بەردەست"
+      "availableStock": "کۆگای بەردەست",
+      "selectStorage": "کۆگا هەڵبژێرە"
     },
     "warranty": {
       "none": "گەرەنتی نییە",
@@ -208,7 +209,8 @@
       "cashSales": "فرۆشتنی نەقد",
       "creditSales": "فرۆشتنی قەرز"
     },
-    "subtitle2": "فرۆشتنی نەقد و قست تۆمار بکە"
+    "subtitle2": "فرۆشتنی نەقد و قست تۆمار بکە",
+    "searchPlace": "گەڕان بۆ ئامێر، کڕیار یان کۆگا..."
   },
   "customers": {
     "title": "کڕیارەکان",

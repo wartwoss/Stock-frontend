@@ -185,7 +185,8 @@
       "namePlaceholder": "Ahmad Ali",
       "phonePlaceholder": "0770...",
       "recordNewSale": "Record a new product sale.",
-      "availableStock": "Available Stock"
+      "availableStock": "Available Stock",
+      "selectStorage": "Select storage"
     },
     "warranty": {
       "none": "No Warranty",
@@ -208,7 +209,8 @@
       "cashSales": "Cash Sales",
       "creditSales": "Credit Sales"
     },
-    "subtitle2": "Record cash and installment sales"
+    "subtitle2": "Record cash and installment sales",
+    "searchPlace": "Search appliance, customer or storage..."
   },
   "customers": {
     "title": "Customers",
