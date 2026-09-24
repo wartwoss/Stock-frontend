@@ -1,4 +1,5 @@
-﻿import { useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import { toLatinDigits } from "../utils/numbers";
 import {
   useEffect,
   useMemo,
@@ -578,7 +579,8 @@ const [inventory, setInventory] =
                 <label>{t("inventory.form.quantityAdded")}</label>
                 <input
                   required
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   min="1"
                   value={
                     stockForm.quantity
@@ -588,9 +590,7 @@ const [inventory, setInventory] =
                     setStockForm(
                       (current) => ({
                         ...current,
-                        quantity:
-                          event.target
-                            .value,
+                        quantity: toLatinDigits(event.target.value),
                       })
                     )
                   }
@@ -689,14 +689,12 @@ const [inventory, setInventory] =
                   </label>
                   <input
                     required
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     value={adjustment}
                     placeholder="Example: -1 or 2"
                     onChange={(event) =>
-                      setAdjustment(
-                        event.target
-                          .value
-                      )
+                      setAdjustment(toLatinDigits(event.target.value))
                     }
                   />
                   <small className="adjustment-help">

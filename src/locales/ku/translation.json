@@ -20,7 +20,7 @@
   },
   "sidebar": {
     "appName": "پێشانگای ئانی",
-    "appSubtitle": "سیستهمی بهۜێوبردن",
+    "appSubtitle": "سیستەمی بەڕێوەبردن",
     "admin": "ئەدمین",
     "storeManager": "بەڕێوەبەری کۆگا",
     "logout": "چوونەدەرەوە"
@@ -538,5 +538,19 @@
       "fullyPaid": "بە تەواوی دراوەتەوە",
       "creditId": "ژمارەی قەرز"
     }
+  },
+  "receipt": {
+    "saleReceipt": "پسوولەی فرۆشتن",
+    "paymentReceipt": "پسوولەی پارەدان",
+    "receiptNo": "ژمارەی پسوولە",
+    "date": "بەروار",
+    "customer": "کڕیار",
+    "item": "ئامێر",
+    "months": "مانگ",
+    "notes": "تێبینی",
+    "amountPaid": "بڕی پارەدان",
+    "thankYou": "سوپاس بۆ مامەڵەکردنتان!",
+    "print": "چاپکردن",
+    "close": "داخستن"
   }
 }

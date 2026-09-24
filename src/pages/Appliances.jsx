@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
+import { toLatinDigits } from "../utils/numbers";
 import {
   Plus,
   Search,
@@ -98,9 +99,10 @@ const [appliances, setAppliances] = useState([]);
   }
   function handleChange(event) {
     const { name, value } = event.target;
+    const converted = toLatinDigits(value);
     setForm((current) => ({
       ...current,
-      [name]: value,
+      [name]: converted,
     }));
     setFormErrors((current) => ({
       ...current,
@@ -377,7 +379,8 @@ const [appliances, setAppliances] = useState([]);
                 <FormField
                   label={t("appliances.form.purchasePrice")}
                   name="purchase_price"
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   step="0.01"
                   min="0"
                   value={form.purchase_price}

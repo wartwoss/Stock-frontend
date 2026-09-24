@@ -538,5 +538,19 @@
       "fullyPaid": "FULLY PAID",
       "creditId": "Credit Account"
     }
+  },
+  "receipt": {
+    "saleReceipt": "Sale Receipt",
+    "paymentReceipt": "Payment Receipt",
+    "receiptNo": "Receipt #",
+    "date": "Date",
+    "customer": "Customer",
+    "item": "Item",
+    "months": "months",
+    "notes": "Notes",
+    "amountPaid": "Amount Paid",
+    "thankYou": "Thank you for your business!",
+    "print": "Print",
+    "close": "Close"
   }
 }

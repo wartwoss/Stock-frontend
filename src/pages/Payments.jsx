@@ -1,4 +1,5 @@
-﻿import { useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import { toLatinDigits } from "../utils/numbers";
 import {
   useEffect,
   useMemo,
@@ -723,11 +724,11 @@ function Payments() {
                         }
                       >
                         #{credit.id}
-                        {" â€” "}
+                        {" — "}
                         {credit.customer
                           ?.name ??
                           "Unknown"}
-                        {" â€” "}
+                        {" — "}
                         {formatCurrency(credit.remaining_debt, credit.currency)}
                       </option>
                     )
@@ -800,7 +801,8 @@ function Payments() {
                 </label>
                 <input
                   required
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   min="0.01"
                   step="0.01"
                   placeholder="100"
@@ -811,9 +813,7 @@ function Payments() {
                     setForm(
                       (current) => ({
                         ...current,
-                        amount:
-                          event.target
-                            .value,
+                        amount: toLatinDigits(event.target.value),
                       })
                     )
                   }

@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { toLatinDigits } from "../utils/numbers";
 import {
   useEffect,
   useMemo,
@@ -790,33 +791,30 @@ function Credits() {
                       (payment) => (
                         <div
                           className="credit-payment-row"
-                          key={
-                            payment.id
-                          }
+                          key={payment.id}
+                          style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
                         >
-                          <div className="payment-history-icon">
-                            <Banknote
-                              size={16}
-                            />
+                          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            <div className="payment-history-icon">
+                              <Banknote size={16} />
+                            </div>
+                            <div>
+                              <strong>{formatCurrency(payment.amount)}</strong>
+                              <span>Payment #{payment.id}</span>
+                            </div>
                           </div>
-                          <div>
-                            <strong>
-                              {formatCurrency(
-                                payment.amount
-                              )}
-                            </strong>
-                            <span>
-                              Payment #
-                              {payment.id}
-                            </span>
-                          </div>
-                          <div className="payment-history-date">
-                            <CalendarDays
-                              size={13}
-                            />
-                            {formatDate(
-                              payment.payment_date
-                            )}
+                          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            <div className="payment-history-date">
+                              <CalendarDays size={13} />
+                              {formatDate(payment.payment_date)}
+                            </div>
+                            <button
+                              className="secondary-button"
+                              style={{ padding: "4px 8px", fontSize: "12px", height: "fit-content" }}
+                              onClick={(e) => { e.stopPropagation(); window.open(`/receipt/payment/${payment.id}`, "_blank"); }}
+                            >
+                              {t("receipt.print", "Print")}
+                            </button>
                           </div>
                         </div>
                       )
@@ -907,7 +905,8 @@ function Credits() {
                   <label>{t("credits.form.paymentAmount")}</label>
                   <input
                     required
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     min="0.01"
                     step="0.01"
                     value={
@@ -918,8 +917,8 @@ function Credits() {
                         (current) => ({
                           ...current,
                           amount:
-                            event.target
-                              .value,
+                            toLatinDigits(event.target
+                              .value),
                         })
                       )
                     }

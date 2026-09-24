@@ -33,6 +33,7 @@ import {
 } from "../api/customers";
 import { useExchangeRate } from "../contexts/ExchangeRateContext";
 import { useTranslation } from "react-i18next";
+import { toLatinDigits } from "../utils/numbers";
 import {
   createCredit,
 } from "../api/credits";
@@ -232,6 +233,8 @@ function Sales() {
     name,
     value
   ) {
+    const numericFields = ["quantity","selling_price","exchange_rate_per_100","warranty_months","down_payment","number_of_payments"];
+    if (numericFields.includes(name)) value = toLatinDigits(value);
     if (name === "storage_id" && value) {
       localStorage.setItem("default_storage_id", value);
     }
@@ -597,7 +600,8 @@ function Sales() {
                   <th>{t("sales.col.payment", "Payment")}</th>
                   <th>{t("sales.col.customer", "Customer")}</th>
                   <th>{t("sales.col.date", "Date")}</th>
-                </tr>
+                    <th></th>
+                  </tr>
               </thead>
               <tbody>
                 {filteredSales.map(
@@ -687,7 +691,16 @@ function Sales() {
                           sale.sale_date
                         )}
                       </td>
-                    </tr>
+                    <td>
+                          <button
+                            onClick={() => window.open(`/receipt/sale/${sale.id}`, "_blank")}
+                            className="secondary-button"
+                            style={{ padding: "4px 8px", fontSize: "12px" }}
+                          >
+                            {t("receipt.print", "Print")}
+                          </button>
+                        </td>
+                      </tr>
                   )
                 )}
               </tbody>
@@ -806,7 +819,9 @@ function Sales() {
                   <label>{t("sales.form.quantity", "Quantity")}</label>
                   <input
                     required
-                    type="number"
+                    type="text"
+
+                    inputMode="decimal"
                     min="1"
                     value={
                       form.quantity
@@ -823,7 +838,9 @@ function Sales() {
                   <label>{t("sales.form.sellingPrice", "Selling Price")}</label>
                   <input
                     required
-                    type="number"
+                    type="text"
+
+                    inputMode="decimal"
                     min="0"
                     step="0.01"
                     placeholder="650"
@@ -866,7 +883,9 @@ function Sales() {
                   <label>{t("sales.form.exchangeRate", "Exchange Rate (100$ to X Dinar)")}</label>
                   <input
                     required
-                    type="number"
+                    type="text"
+
+                    inputMode="decimal"
                     min="1"
                     value={form.exchange_rate_per_100}
                     onChange={(event) => updateField("exchange_rate_per_100", event.target.value)}
@@ -1018,7 +1037,9 @@ function Sales() {
                     <div className="form-field">
                       <label>{t("sales.form.warrantyMonths", "Warranty (Months)")}</label>
                       <input
-                        type="number"
+                        type="text"
+
+                        inputMode="decimal"
                         min="0"
                         value={form.warranty_months}
                         placeholder={t("sales.form.eg12", "e.g. 12")}
@@ -1050,7 +1071,9 @@ function Sales() {
                     <div className="form-field">
                       <label>{t("sales.form.downPayment", "Down Payment")}</label>
                       <input
-                        type="number"
+                        type="text"
+
+                        inputMode="decimal"
                         min="0"
                         step="0.01"
                         value={
@@ -1068,7 +1091,9 @@ function Sales() {
                     <div className="form-field">
                       <label>{t("sales.form.numberOfPayments", "Number of Payments")}</label>
                       <input
-                        type="number"
+                        type="text"
+
+                        inputMode="decimal"
                         min="1"
                         placeholder="8"
                         value={

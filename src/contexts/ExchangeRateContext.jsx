@@ -9,7 +9,7 @@ export function ExchangeRateProvider({ children }) {
   useEffect(() => {
     async function fetchRate() {
       try {
-        const response = await fetch('https://open.er-api.com/v6/latest/USD');
+        const response = await fetch('https://v6.exchangerate-api.com/v6/e4c22a4454b8d7df74482dbf/latest/USD');
         const data = await response.json();
         if (data && data.rates && data.rates.IQD) {
           // The API gives rate per 1 USD (e.g., 1310). We want rate per 100 USD (e.g., 131000).

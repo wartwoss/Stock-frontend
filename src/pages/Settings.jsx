@@ -1,5 +1,6 @@
-﻿import { Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { toLatinDigits } from "../utils/numbers";
 import { runBackup } from "../api/backup";
 import { CloudUpload } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
@@ -283,7 +284,7 @@ function Settings() {
         [name]:
           type === "checkbox"
             ? checked
-            : value,
+            : toLatinDigits(value),
       })
     );
     setMonitoringMessage("");
@@ -766,6 +767,8 @@ function Settings() {
                 </div>
                 <input
                   type="number"
+                  type="text"
+                  inputMode="numeric"
                   name="days_before_due"
                   min="0"
                   required

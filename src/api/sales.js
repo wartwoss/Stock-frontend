@@ -25,3 +25,10 @@ export async function createSale(data) {
   }
   return result;
 }
+export async function getSale(id) {
+  const response = await fetch(`/api/sales/${id}`, {
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) return null;
+  return response.json();
+}
