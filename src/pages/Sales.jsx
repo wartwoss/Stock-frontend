@@ -48,6 +48,15 @@ function getToday() {
   ).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
+
+function getNextMonth() {
+  const date = new Date();
+  date.setMonth(date.getMonth() + 1);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return "${year}-${month}-${day}";
+}
 function getStoredStorageId(storageList = []) {
   const stored = localStorage.getItem("default_storage_id");
   if (stored && storageList.some((s) => String(s.id) === String(stored))) {
@@ -72,9 +81,9 @@ function createEmptyForm(defaultStorageId = "") {
     warranty_months: "",
     currency: "USD",
     exchange_rate_per_100: "150000",
-    down_payment: "0",
+    down_payment: "",
     number_of_payments: "",
-    first_due_date: "",
+    first_due_date: getNextMonth(),
   };
 }
 function Sales() {
@@ -600,7 +609,8 @@ function Sales() {
                   <th>{t("sales.col.payment", "Payment")}</th>
                   <th>{t("sales.col.customer", "Customer")}</th>
                   <th>{t("sales.col.date", "Date")}</th>
-                    <th></th>
+                   <th>{t("sales.col.exchangeRate", "Exchange Rate")}</th>
+                     <th></th>
                   </tr>
               </thead>
               <tbody>
@@ -690,6 +700,13 @@ function Sales() {
                         {formatDate(
                           sale.sale_date
                         )}
+                      </td>
+                      <td>
+                        {sale.currency === "IQD" ? (
+                          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                            {Number(sale.exchange_rate_per_100 ?? 0).toLocaleString()} IQD / 100\$
+                          </span>
+                        ) : "-"}
                       </td>
                     <td>
                           <button
@@ -880,7 +897,7 @@ function Sales() {
 
               {form.currency === "IQD" && (
                 <div className="form-field">
-                  <label>{t("sales.form.exchangeRate", "Exchange Rate (100$ to X Dinar)")}</label>
+                  <label>{t("sales.form.exchangeRate", "نرخی دۆلار بۆ دینار")}</label>
                   <input
                     required
                     type="text"
@@ -1108,21 +1125,6 @@ function Sales() {
                         }
                       />
                     </div>
-                  </div>
-                  <div className="form-field">
-                    <label>{t("sales.form.firstDueDate", "First Due Date")}</label>
-                    <input
-                      type="date"
-                      value={
-                        form.first_due_date
-                      }
-                      onChange={(event) =>
-                        updateField(
-                          "first_due_date",
-                          event.target.value
-                        )
-                      }
-                    />
                   </div>
                   <div className="credit-preview">
                     <div>

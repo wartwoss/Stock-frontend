@@ -29,6 +29,34 @@ function App() {
     let modalBox = null;
     let startX = 0, startY = 0, startLeft = 0, startTop = 0;
 
+    const modalPositions = new Map();
+
+    function getModalKey(modal) {
+      const h2 = modal.querySelector('.modal-header h2');
+      return h2 ? h2.textContent.trim() : 'default';
+    }
+
+    const observer = new MutationObserver((mutations) => {
+      for (const mut of mutations) {
+        for (const node of mut.addedNodes) {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            const modals = node.classList?.contains('app-modal') ? [node] : (node.querySelectorAll ? node.querySelectorAll('.app-modal') : []);
+            for (const modal of modals) {
+              const key = getModalKey(modal);
+              const pos = modalPositions.get(key);
+              if (pos) {
+                modal.style.position = 'fixed';
+                modal.style.margin = '0';
+                modal.style.left = pos.left;
+                modal.style.top = pos.top;
+              }
+            }
+          }
+        }
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
     function onPointerDown(e) {
       const header = e.target.closest('.modal-header');
       if (!header) return;
@@ -72,6 +100,12 @@ function App() {
       if (modalBox) {
         const header = modalBox.querySelector('.modal-header');
         if (header) header.style.cursor = '';
+        
+        const key = getModalKey(modalBox);
+        modalPositions.set(key, {
+          left: modalBox.style.left,
+          top: modalBox.style.top
+        });
       }
       modalBox = null;
     }
@@ -83,6 +117,7 @@ function App() {
       document.removeEventListener('pointerdown', onPointerDown);
       document.removeEventListener('pointermove', onPointerMove);
       document.removeEventListener('pointerup',   onPointerUp);
+      observer.disconnect();
     };
   }, []);
 

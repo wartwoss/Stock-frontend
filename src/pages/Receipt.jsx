@@ -81,8 +81,9 @@ export default function Receipt() {
   return (
     <div className="receipt-container">
       <div className="receipt-header">
-        <h1>{t("sidebar.appSubtitle", "Management System")}</h1>
-        <p className="receipt-title">
+        <h1>پێشانگای ئانی</h1>
+        <p className="receipt-phone" style={{ fontSize: "1.1em", fontWeight: "bold", margin: "5px 0" }}>0770 156 3081</p>
+        <p className="receipt-title" style={{ marginTop: "10px" }}>
           {isSale ? t("receipt.saleReceipt", "Sale Receipt") : t("receipt.paymentReceipt", "Payment Receipt")}
         </p>
       </div>

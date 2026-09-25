@@ -14,6 +14,7 @@ import {
   Package,
   X,
   Minus,
+  Trash2,
 } from "lucide-react";
 import {
   getInventory,
@@ -22,6 +23,7 @@ import {
 } from "../api/inventory";
 import {
   getAppliances,
+  deleteAppliance,
 } from "../api/appliances";
 import {
   getStorages,
@@ -149,9 +151,13 @@ const [inventory, setInventory] =
       0
     );
   function openStockModal() {
+    const stored = localStorage.getItem("default_storage_id");
+    const defaultStorageId = stored && storages.some(s => String(s.id) === String(stored)) 
+      ? stored 
+      : (storages.length > 0 ? String(storages[0].id) : "");
     setStockForm({
       appliance_id: "",
-      storage_id: "",
+      storage_id: defaultStorageId,
       quantity: "",
     });
     setFormError("");
@@ -531,7 +537,7 @@ const [inventory, setInventory] =
                         {
                           appliance.name
                         }{" "}
-                        â€”{" "}
+                        -{" "}
                         {
                           appliance.brand
                         }
@@ -547,16 +553,15 @@ const [inventory, setInventory] =
                   value={
                     stockForm.storage_id
                   }
-                  onChange={(event) =>
+                  onChange={(event) => {
+                    localStorage.setItem("default_storage_id", event.target.value);
                     setStockForm(
                       (current) => ({
                         ...current,
-                        storage_id:
-                          event.target
-                            .value,
+                        storage_id: event.target.value,
                       })
-                    )
-                  }
+                    );
+                  }}
                 >
                   <option value="">
                     Select storage
@@ -568,7 +573,7 @@ const [inventory, setInventory] =
                         value={storage.id}
                       >
                         {storage.name}
-                        {" â€” "}
+                        {" - "}
                         {storage.location}
                       </option>
                     )

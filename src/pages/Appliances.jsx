@@ -15,13 +15,21 @@ import {
   updateAppliance,
   deleteAppliance,
 } from "../api/appliances";
-const emptyForm = {
+function getToday() {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+const emptyForm = () => ({
   name: "",
   category: "",
   brand: "",
   purchase_price: "",
-  date_added: "",
-};
+  date_added: getToday(),
+});
 function Appliances() {
     const { t } = useTranslation();
 const [appliances, setAppliances] = useState([]);
@@ -31,7 +39,7 @@ const [appliances, setAppliances] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAppliance, setEditingAppliance] =
     useState(null);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   useEffect(() => {
@@ -70,7 +78,7 @@ const [appliances, setAppliances] = useState([]);
   }, [appliances, search]);
   function openCreateModal() {
     setEditingAppliance(null);
-    setForm(emptyForm);
+    setForm(emptyForm());
     setFormErrors({});
     setModalOpen(true);
   }
@@ -94,7 +102,7 @@ const [appliances, setAppliances] = useState([]);
     if (saving) return;
     setModalOpen(false);
     setEditingAppliance(null);
-    setForm(emptyForm);
+    setForm(emptyForm());
     setFormErrors({});
   }
   function handleChange(event) {

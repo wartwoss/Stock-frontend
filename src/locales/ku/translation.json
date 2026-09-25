@@ -98,6 +98,8 @@
     "totalSales": "کۆی فرۆشتنەکان",
     "salesRecorded": "{{count}} فرۆشتن تۆمارکراوە",
     "outstandingDebt": "قەرزی ماوە",
+    "outstandingDebtUSD": "قەرزی ماوە ($)",
+    "outstandingDebtIQD": "قەرزی ماوە (IQD)",
     "activeCredits": "{{count}} قەرزی چالاک",
     "paymentsThisMonth": "پارەدانەکانی ئەم مانگە",
     "currentMonth": "مانگی ئەمسالە",
@@ -143,7 +145,8 @@
       "customer": "کڕیار",
       "date": "بەروار",
       "warranty": "گەرەنتی",
-      "storage": "کۆگا"
+      "storage": "کۆگا",
+      "exchangeRate": "نرخی دۆلار"
     },
     "form": {
       "allPaymentTypes": "هەموو جۆرەکانی پارەدان",
@@ -186,7 +189,8 @@
       "phonePlaceholder": "0770...",
       "recordNewSale": "فرۆشتنێکی نوێی بەرهەم تۆمار بکە.",
       "availableStock": "کۆگای بەردەست",
-      "selectStorage": "کۆگا هەڵبژێرە"
+      "selectStorage": "کۆگا هەڵبژێرە",
+      "exchangeRate": "نرخی دۆلار بۆ دینار"
     },
     "warranty": {
       "none": "گەرەنتی نییە",
@@ -302,6 +306,8 @@
     "subtitle": "شوێنکردنەوەی گرێبەستی قست، قەرزی ماوە و پارەدانی تووشبووەکان.",
     "totalCredits": "کۆی قەرزەکان",
     "outstandingDebt": "قەرزی ماوە",
+    "outstandingDebtUSD": "قەرزی ماوە ($)",
+    "outstandingDebtIQD": "قەرزی ماوە (IQD)",
     "upcoming": "داهاتوو",
     "overdue": "دواکەوتوو",
     "completed": "تەواوبوو",

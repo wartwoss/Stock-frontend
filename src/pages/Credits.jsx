@@ -189,14 +189,15 @@ function Credits() {
       currentList,
       search,
     ]);
-  const totalOutstanding =
+  const totalOutstandingUSD =
     credits.reduce((total, credit) => {
-      let amount = Number(credit.remaining_debt ?? 0);
-      if (credit.currency === "IQD") {
-        const rate = Number(credit.exchange_rate_per_100 ?? 150000) / 100;
-        amount = amount / rate;
-      }
-      return total + amount;
+      if (credit.currency !== "USD") return total;
+      return total + Number(credit.remaining_debt ?? 0);
+    }, 0);
+  const totalOutstandingIQD =
+    credits.reduce((total, credit) => {
+      if (credit.currency !== "IQD") return total;
+      return total + Number(credit.remaining_debt ?? 0);
     }, 0);
   async function openDetails(
     credit
@@ -327,17 +328,14 @@ function Credits() {
           value={credits.length}
         />
         <CreditSummaryCard
-          icon={
-            <WalletCards
-              size={20}
-            />
-          }
-          title={t("credits.outstandingDebt")}
-          value={
-            formatCurrency(
-              totalOutstanding
-            )
-          }
+          icon={<WalletCards size={20} />}
+          title={t("credits.outstandingDebtUSD", "Outstanding Debt ($)")}
+          value={formatCurrency(totalOutstandingUSD, "USD")}
+        />
+        <CreditSummaryCard
+          icon={<WalletCards size={20} />}
+          title={t("credits.outstandingDebtIQD", "Outstanding Debt (IQD)")}
+          value={Math.round(totalOutstandingIQD).toLocaleString("en-US") + " IQD"}
         />
         <CreditSummaryCard
           icon={
@@ -606,7 +604,7 @@ function Credits() {
                                 <Banknote
                                   size={14}
                                 />
-                                Pay
+                                {t("credits.pay", "Pay")}
                               </button>
                             )}
                           </div>

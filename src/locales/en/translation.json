@@ -98,6 +98,8 @@
     "totalSales": "Total Sales",
     "salesRecorded": "{{count}} sales recorded",
     "outstandingDebt": "Outstanding Debt",
+    "outstandingDebtUSD": "Outstanding Debt ($)",
+    "outstandingDebtIQD": "Outstanding Debt (IQD)",
     "activeCredits": "{{count}} active credits",
     "paymentsThisMonth": "Payments This Month",
     "currentMonth": "Current month",
@@ -143,7 +145,8 @@
       "customer": "Customer",
       "date": "Date",
       "warranty": "Warranty",
-      "storage": "Storage"
+      "storage": "Storage",
+      "exchangeRate": "Exchange Rate"
     },
     "form": {
       "allPaymentTypes": "All Payment Types",
@@ -186,7 +189,8 @@
       "phonePlaceholder": "0770...",
       "recordNewSale": "Record a new product sale.",
       "availableStock": "Available Stock",
-      "selectStorage": "Select storage"
+      "selectStorage": "Select storage",
+      "exchangeRate": "Exchange Rate (100$ to X Dinar)"
     },
     "warranty": {
       "none": "No Warranty",
@@ -302,6 +306,8 @@
     "subtitle": "Track installment agreements, outstanding debt and due payments.",
     "totalCredits": "Total Credits",
     "outstandingDebt": "Outstanding Debt",
+    "outstandingDebtUSD": "Outstanding Debt ($)",
+    "outstandingDebtIQD": "Outstanding Debt (IQD)",
     "upcoming": "Upcoming",
     "overdue": "Overdue",
     "completed": "Completed",
