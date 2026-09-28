@@ -85,7 +85,7 @@ const [inventory, setInventory] =
       setInventory(inventoryData);
       setAppliances(applianceData);
       setStorages(storageData);
-    } catch (err) {
+    } catch {
       setError(
         "Could not load inventory information."
       );
@@ -210,6 +210,33 @@ const [inventory, setInventory] =
       setSaving(false);
     }
   }
+  async function handleDeleteAppliance(applianceId) {
+    if (!window.confirm("Are you sure you want to delete this appliance? This will hide it from the system but keep historical sale records intact.")) {
+      return;
+    }
+    try {
+      setLoading(true);
+      await deleteAppliance(applianceId);
+      await loadPage();
+    } catch {
+      alert("Failed to delete appliance.");
+      setLoading(false);
+    }
+  }
+
+  function stepAdjustment(
+    delta
+  ) {
+    const typed = Number(adjustment);
+    const current =
+      adjustment !== "" &&
+      Number.isFinite(typed)
+        ? typed
+        : 0;
+    setAdjustment(
+      String(current + delta)
+    );
+  }
   async function handleAdjustment(
     event
   ) {
@@ -287,7 +314,10 @@ const [inventory, setInventory] =
             <Search size={18} />
             <input
               type="text"
-              placeholder="Search appliances..."
+              placeholder={t(
+                "inventory.searchPlace",
+                "Search appliances..."
+              )}
               value={search}
               onChange={(event) =>
                 setSearch(
@@ -367,7 +397,7 @@ const [inventory, setInventory] =
                   <th>{t("inventory.purchased")}</th>
                   <th>{t("inventory.col.sold")}</th>
                   <th>{t("inventory.available")}</th>
-                  <th>Status</th>
+                  <th>{t("inventory.status", "Status")}</th>
                   <th>{t("inventory.action")}</th>
                 </tr>
               </thead>
@@ -447,11 +477,18 @@ const [inventory, setInventory] =
                               )
                             }
                           >
-                            <SlidersHorizontal
-                              size={15}
-                            />
-                            Adjust
+                            <SlidersHorizontal size={15} />
+                            {t("inventory.adjust", "Adjust")}
                           </button>
+                          {available <= 0 && (
+                            <button
+                              className="adjust-button"
+                              style={{ marginLeft: "8px", color: "#ef4444", borderColor: "#ef4444" }}
+                              onClick={() => handleDeleteAppliance(item.appliance.id)}
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );
@@ -642,11 +679,16 @@ const [inventory, setInventory] =
               <div className="modal-header">
                 <div>
                   <h2>
-                    Adjust Inventory
+                    {t(
+                      "inventory.adjustTitle",
+                      "Adjust Inventory"
+                    )}
                   </h2>
                   <p>
-                    Correct the current
-                    physical stock count.
+                    {t(
+                      "inventory.form.adjustDesc",
+                      "Correct the current physical stock count."
+                    )}
                   </p>
                 </div>
                 <button
@@ -675,7 +717,11 @@ const [inventory, setInventory] =
                       }
                     </strong>
                     <span>
-                      Current stock:{" "}
+                      {t(
+                        "inventory.form.currentStock",
+                        "Current stock"
+                      )}
+                      :{" "}
                       {
                         selectedInventory
                           .quantity_in_stock
@@ -690,44 +736,46 @@ const [inventory, setInventory] =
                 )}
                 <div className="form-field">
                   <label>
-                    Adjustment
+                    {t("inventory.adjustment", "Adjustment")}
                   </label>
                   <input
                     required
                     type="text"
                     inputMode="decimal"
                     value={adjustment}
-                    placeholder="Example: -1 or 2"
+                    placeholder={t(
+                      "inventory.form.adjustPlaceholder",
+                      "Example: -1 or 2"
+                    )}
                     onChange={(event) =>
                       setAdjustment(toLatinDigits(event.target.value))
                     }
                   />
                   <small className="adjustment-help">
-                    Use a positive number
-                    to add stock, or a
-                    negative number to
-                    remove an accidental
-                    extra unit.
+                    {t(
+                      "inventory.form.adjustHelp",
+                      "Use a positive number to add stock, or a negative number to remove an accidental extra unit."
+                    )}
                   </small>
                 </div>
                 <div className="quick-adjustments">
                   <button
                     type="button"
                     onClick={() =>
-                      setAdjustment("-1")
+                      stepAdjustment(-1)
                     }
                   >
                     <Minus size={14} />
-                    Remove 1
+                    {t("inventory.remove1", "Remove 1")}
                   </button>
                   <button
                     type="button"
                     onClick={() =>
-                      setAdjustment("1")
+                      stepAdjustment(1)
                     }
                   >
                     <Plus size={14} />
-                    Add 1
+                    {t("inventory.add1", "Add 1")}
                   </button>
                 </div>
                 <div className="modal-footer">
@@ -738,7 +786,7 @@ const [inventory, setInventory] =
                       closeAdjustmentModal
                     }
                   >
-                    Cancel
+                    {t("common.cancel", "Cancel")}
                   </button>
                   <button
                     type="submit"
@@ -746,8 +794,14 @@ const [inventory, setInventory] =
                     disabled={saving}
                   >
                     {saving
-                      ? "Saving..."
-                      : "Apply Adjustment"}
+                      ? t(
+                          "inventory.form.saving",
+                          "Saving..."
+                        )
+                      : t(
+                          "inventory.form.applyAdjustment",
+                          "Apply Adjustment"
+                        )}
                   </button>
                 </div>
               </form>
@@ -774,24 +828,29 @@ function SummaryCard({
     </div>
   );
 }
-function StockStatus({ quantity }) {
+function StockStatus({
+  quantity,
+}) {
+  const {
+    t,
+  } = useTranslation();
   if (quantity <= 0) {
     return (
       <span className="stock-status out">
-        Out of Stock
+        {t("inventory.outOfStock", "Out of Stock")}
       </span>
     );
   }
   if (quantity <= 3) {
     return (
       <span className="stock-status low">
-        Low Stock
+        {t("inventory.lowStock", "Low Stock")}
       </span>
     );
   }
   return (
     <span className="stock-status available">
-      Available
+      {t("inventory.available", "Available")}
     </span>
   );
 }

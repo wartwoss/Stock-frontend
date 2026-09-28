@@ -13,6 +13,8 @@ import {
   CreditCard,
   UserRound,
   X,
+  Printer,
+  AlertTriangle,
 } from "lucide-react";
 import {
   getSales,
@@ -37,6 +39,7 @@ import { toLatinDigits } from "../utils/numbers";
 import {
   createCredit,
 } from "../api/credits";
+import PrintSelectedModal from "../components/PrintSelectedModal";
 function getToday() {
   const date = new Date();
   const year = date.getFullYear();
@@ -55,7 +58,33 @@ function getNextMonth() {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
-  return "${year}-${month}-${day}";
+  return `${year}-${month}-${day}`;
+}
+function getDateCutoff(
+  range
+) {
+  if (!range) {
+    return null;
+  }
+  const date = new Date();
+  if (range === "week") {
+    date.setDate(date.getDate() - 7);
+  } else if (
+    range === "month"
+  ) {
+    date.setMonth(
+      date.getMonth() - 1
+    );
+  } else if (
+    range === "year"
+  ) {
+    date.setFullYear(
+      date.getFullYear() - 1
+    );
+  } else {
+    return null;
+  }
+  return date;
 }
 function getStoredStorageId(storageList = []) {
   const stored = localStorage.getItem("default_storage_id");
@@ -102,6 +131,8 @@ function Sales() {
     useState("");
   const [typeFilter, setTypeFilter] =
     useState("");
+  const [dateFilter, setDateFilter] =
+    useState("");
   const [loading, setLoading] =
     useState(true);
   const [error, setError] =
@@ -114,11 +145,55 @@ function Sales() {
     useState(false);
   const [formError, setFormError] =
     useState("");
+  /* ── Combined print selection ── */
+  const [
+    selectedIds,
+    setSelectedIds,
+  ] = useState([]);
+  const [
+    selectedCustomerId,
+    setSelectedCustomerId,
+  ] = useState(null);
+  const [
+    selectionWarning,
+    setSelectionWarning,
+  ] = useState("");
+  const [
+    printModalOpen,
+    setPrintModalOpen,
+  ] = useState(false);
 
   const [applianceSelectOpen, setApplianceSelectOpen] = useState(false);
   const [applianceSearch, setApplianceSearch] = useState("");
+  const [applianceSort, setApplianceSort] = useState("name");
   const [customerSelectOpen, setCustomerSelectOpen] = useState(false);
   const [customerSearch, setCustomerSearch] = useState("");
+
+  // Appliance picker: filter by any spec, then order by the chosen column.
+  const sortedAppliances = useMemo(() => {
+    const term = applianceSearch.toLowerCase().trim();
+    const matched = appliances.filter(
+      (item) =>
+        !term ||
+        (item.name || "")
+          .toLowerCase()
+          .includes(term) ||
+        (item.brand || "")
+          .toLowerCase()
+          .includes(term) ||
+        (item.category || "")
+          .toLowerCase()
+          .includes(term)
+    );
+    return [...matched].sort((a, b) =>
+      String(a[applianceSort] || "").localeCompare(
+        String(b[applianceSort] || ""),
+        undefined,
+        { sensitivity: "base" }
+      )
+    );
+  }, [appliances, applianceSearch, applianceSort]);
+
   useEffect(() => {
     loadPage();
   }, []);
@@ -192,6 +267,10 @@ function Sales() {
   
   const remainingDebt = Math.max(0, totalPrice - Number(form.down_payment || 0));
   const estimatedInstallment = Number(form.number_of_payments) > 0 ? remainingDebt / Number(form.number_of_payments) : 0;
+  const dateCutoff = useMemo(
+    () => getDateCutoff(dateFilter),
+    [dateFilter]
+  );
   const filteredSales =
     useMemo(() => {
       const value =
@@ -212,16 +291,141 @@ function Sales() {
           !typeFilter ||
           sale.payment_type ===
             typeFilter;
+        const matchesDate =
+          !dateCutoff ||
+          (sale.sale_date &&
+            new Date(
+              sale.sale_date
+            ) >= dateCutoff);
         return (
           matchesSearch &&
-          matchesType
+          matchesType &&
+          matchesDate
         );
       });
     }, [
       sales,
       search,
       typeFilter,
+      dateCutoff,
     ]);
+  const selectedSales = useMemo(
+    () =>
+      sales.filter((sale) =>
+        selectedIds.includes(sale.id)
+      ),
+    [sales, selectedIds]
+  );
+  const selectedCustomer =
+    selectedSales[0]?.customer ?? null;
+  useEffect(() => {
+    if (!selectionWarning) {
+      return;
+    }
+    const timer = setTimeout(
+      () => setSelectionWarning(""),
+      4000
+    );
+    return () =>
+      clearTimeout(timer);
+  }, [selectionWarning]);
+  function isSameCustomer(
+    a,
+    b
+  ) {
+    return (
+      String(a ?? "") ===
+      String(b ?? "")
+    );
+  }
+  function toggleSelection(
+    sale
+  ) {
+    const alreadySelected =
+      selectedIds.includes(sale.id);
+    if (
+      !alreadySelected &&
+      selectedIds.length > 0
+    ) {
+      const owner =
+        selectedSales[0];
+      if (
+        !isSameCustomer(
+          owner?.customer_id,
+          sale.customer_id
+        )
+      ) {
+        setSelectionWarning(
+          t(
+            "printsel.differentCustomer",
+            "All selected sales must belong to the same customer. Unselect the current ones first."
+          )
+        );
+        return;
+      }
+    }
+    if (alreadySelected) {
+      const nextIds =
+        selectedIds.filter(
+          (id) => id !== sale.id
+        );
+      setSelectedIds(nextIds);
+      if (nextIds.length === 0) {
+        setSelectedCustomerId(null);
+      }
+      setSelectionWarning("");
+      return;
+    }
+    setSelectedIds([
+      ...selectedIds,
+      sale.id,
+    ]);
+    setSelectedCustomerId(
+      sale.customer_id ?? null
+    );
+    setSelectionWarning("");
+  }
+  function openPrintModal() {
+    if (selectedSales.length === 0) {
+      return;
+    }
+    const owners = new Set(
+      selectedSales.map((sale) =>
+        String(sale.customer_id ?? "")
+      )
+    );
+    const owner =
+      selectedSales[0];
+    if (
+      owners.size > 1 ||
+      !isSameCustomer(
+        owner?.customer_id,
+        selectedCustomerId
+      )
+    ) {
+      setSelectedIds([]);
+      setSelectedCustomerId(null);
+      setSelectionWarning(
+        t(
+          "printsel.differentCustomer",
+          "All selected sales must belong to the same customer. Unselect the current ones first."
+        )
+      );
+      return;
+    }
+    setSelectionWarning("");
+    setPrintModalOpen(true);
+  }
+  function generateCombinedReceipt() {
+    const ids = selectedSales
+      .map((sale) => sale.id)
+      .join(",");
+    window.open(
+      `/multi-receipt/sale?ids=${ids}`,
+      "_blank",
+      "noopener"
+    );
+  }
   const { exchangeRate } = useExchangeRate();
 
   function openModal() {
@@ -495,16 +699,39 @@ function Sales() {
         <div>
           <h2>Sales</h2>
           <p>
-            Record cash and installment
-            sales.
+            {t("sales.subtitle2")}
           </p>
         </div>
-        <button
-          className="primary-action-button"
-          onClick={openModal}
-        >
-          <Plus size={18} />{t("sales.newSale", "New Sale")}</button>
+        <div className="printsel-toolbar-actions">
+          {selectedSales.length > 0 && (
+            <button
+              type="button"
+              className="printsel-selected-button"
+              onClick={openPrintModal}
+            >
+              <Printer size={16} />
+              {t(
+                "printsel.printSelected",
+                "Print Selected"
+              )}
+              <span>
+                {selectedSales.length}
+              </span>
+            </button>
+          )}
+          <button
+            className="primary-action-button"
+            onClick={openModal}
+          >
+            <Plus size={18} />{t("sales.newSale", "New Sale")}</button>
+        </div>
       </div>
+      {selectionWarning && (
+        <div className="printsel-warning">
+          <AlertTriangle size={16} />
+          {selectionWarning}
+        </div>
+      )}
       <section className="sales-summary">
         <SaleSummary
           icon={
@@ -546,25 +773,64 @@ function Sales() {
               }
             />
           </div>
-          <select
-            className="payment-filter"
-            value={typeFilter}
-            onChange={(event) =>
-              setTypeFilter(
-                event.target.value
-              )
-            }
-          >
-            <option value="">
-              All Payment Types
-            </option>
-            <option value="cash">
-              Cash
-            </option>
-            <option value="credit">
-              Credit
-            </option>
-          </select>
+          <div className="sales-filters">
+            <select
+              className="payment-filter"
+              value={typeFilter}
+              onChange={(event) =>
+                setTypeFilter(
+                  event.target.value
+                )
+              }
+            >
+              <option value="">
+                {t(
+                  "sales.filter.allPaymentTypes",
+                  "All Payment Types"
+                )}
+              </option>
+              <option value="cash">
+                {t("common.payment.cash", "Cash")}
+              </option>
+              <option value="credit">
+                {t("common.payment.credit", "Credit")}
+              </option>
+            </select>
+            <select
+              className="payment-filter"
+              value={dateFilter}
+              onChange={(event) =>
+                setDateFilter(
+                  event.target.value
+                )
+              }
+            >
+              <option value="">
+                {t(
+                  "sales.filter.allTime",
+                  "All Time"
+                )}
+              </option>
+              <option value="week">
+                {t(
+                  "sales.filter.pastWeek",
+                  "Past Week"
+                )}
+              </option>
+              <option value="month">
+                {t(
+                  "sales.filter.pastMonth",
+                  "Past Month"
+                )}
+              </option>
+              <option value="year">
+                {t(
+                  "sales.filter.pastYear",
+                  "Past Year"
+                )}
+              </option>
+            </select>
+          </div>
         </div>
         {loading ? (
           <div className="table-state">
@@ -601,7 +867,7 @@ function Sales() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>{t("sales.col.sale", "Sale")}</th>
+                  <th style={{width: "40px"}}></th><th>{t("sales.col.sale", "Sale")}</th>
                   <th>{t("sales.col.storage", "Storage")}</th>
                   <th>{t("sales.col.quantity", "Quantity")}</th>
                   <th>{t("sales.col.unitPrice", "Unit Price")}</th>
@@ -616,7 +882,22 @@ function Sales() {
               <tbody>
                 {filteredSales.map(
                   (sale) => (
-                    <tr key={sale.id}>
+                    <tr
+                      key={sale.id}
+                      className={
+                        selectedIds.includes(sale.id)
+                          ? "selected-row"
+                          : ""
+                      }
+                    >
+                      <td>
+                        <input 
+                          type="checkbox" 
+                          checked={selectedIds.includes(sale.id)}
+                          onChange={() => toggleSelection(sale)}
+                          style={{ cursor: "pointer", width: "16px", height: "16px" }}
+                        />
+                      </td>
                       <td>
                         <div className="appliance-name-cell">
                           <div className="product-icon">
@@ -708,16 +989,30 @@ function Sales() {
                           </span>
                         ) : "-"}
                       </td>
-                    <td>
-                          <button
-                            onClick={() => window.open(`/receipt/sale/${sale.id}`, "_blank")}
-                            className="secondary-button"
-                            style={{ padding: "4px 8px", fontSize: "12px" }}
-                          >
-                            {t("receipt.print", "Print")}
-                          </button>
-                        </td>
-                      </tr>
+                      <td>
+                        <button
+                          onClick={() =>
+                            window.open(
+                              `/receipt/sale/${sale.id}`,
+                              "_blank"
+                            )
+                          }
+                          className={
+                            selectedIds.includes(
+                              sale.id
+                            )
+                              ? "printsel-button printsel-button--active"
+                              : "printsel-button"
+                          }
+                          style={{
+                            padding: "4px 8px",
+                            fontSize: "12px",
+                          }}
+                        >
+                          {t("receipt.print", "Print")}
+                        </button>
+                      </td>
+                    </tr>
                   )
                 )}
               </tbody>
@@ -725,6 +1020,42 @@ function Sales() {
           </div>
         )}
       </div>
+      <PrintSelectedModal
+        open={printModalOpen}
+        customer={selectedCustomer}
+        items={selectedSales.map(
+          (sale) => ({
+            key: sale.id,
+            title:
+              sale.appliance?.name ??
+              t(
+                "print.field.appliance",
+                "Appliance"
+              ),
+            subtitle: `Sale #${sale.id} • ${t(
+              "sales.col.quantity",
+              "Quantity"
+            )}: ${sale.quantity} • ${formatDate(sale.sale_date)}`,
+            amount: formatCurrency(
+              sale.total_price,
+              sale.currency
+            ),
+          })
+        )}
+        onRemove={(id) => {
+          const sale = sales.find(
+            (item) => item.id === id
+          );
+          if (sale) {
+            toggleSelection(sale);
+          }
+        }}
+        onClose={() =>
+          setPrintModalOpen(false)
+        }
+        onConfirm={generateCombinedReceipt}
+        t={t}
+      />
       {modalOpen && (
         <div
           className="modal-backdrop"
@@ -889,8 +1220,12 @@ function Sales() {
                     value={form.currency}
                     onChange={(event) => updateField("currency", event.target.value)}
                   >
-                    <option value="USD">USD ($)</option>
-                    <option value="IQD">IQD (Dinar)</option>
+                    <option value="USD">
+                      {t("common.currency.usd", "دۆلار")}
+                    </option>
+                    <option value="IQD">
+                      {t("common.currency.iqd", "دینار")}
+                    </option>
                   </select>
                 </div>
               </div>
@@ -996,7 +1331,7 @@ function Sales() {
                       padding: "4px 0",
                     }}
                   >
-                    Logged as an anonymous walk-in sale. Choose "Existing Customer" or "New Customer" to attach customer details for warranty tracking.
+                    {t("sales.form.walkInNote")}
                   </div>
                 ) : form.customer_mode ===
                   "existing" ? (
@@ -1177,8 +1512,8 @@ function Sales() {
               <h2>{t("sales.form.selectAppliance", "Select appliance")}</h2>
               <button type="button" className="modal-close" onClick={() => setApplianceSelectOpen(false)}><X size={20} /></button>
             </div>
-            <div style={{ padding: '0 20px 10px 20px', flexShrink: 0 }}>
-              <div className="table-search" style={{ margin: '0' }}>
+            <div className="appliance-picker-filters">
+              <div className="table-search appliance-picker-search">
                 <Search size={18} />
                 <input
                   type="text"
@@ -1188,29 +1523,61 @@ function Sales() {
                   autoFocus
                 />
               </div>
+              <div className="appliance-picker-sort">
+                <label htmlFor="appliance-sort">
+                  {t("sales.form.sortBy", "Sort by")}
+                </label>
+                <select
+                  id="appliance-sort"
+                  value={applianceSort}
+                  onChange={(e) => setApplianceSort(e.target.value)}
+                >
+                  <option value="name">{t("sales.form.sortName", "Name")}</option>
+                  <option value="brand">{t("sales.form.sortBrand", "Brand")}</option>
+                  <option value="category">{t("sales.form.sortCategory", "Category")}</option>
+                </select>
+              </div>
             </div>
-            <div style={{ overflowY: 'auto', flex: 1, padding: '0 20px 20px 20px' }}>
-              {appliances
-                .filter(a => a.name.toLowerCase().includes(applianceSearch.toLowerCase()) || a.brand.toLowerCase().includes(applianceSearch.toLowerCase()))
-                .map((a) => (
-                  <div 
-                    key={a.id} 
-                    style={{ padding: '10px', borderBottom: '1px solid #e5e7eb', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}
+            <div className="appliance-picker-list">
+              {sortedAppliances.length === 0 ? (
+                <div className="appliance-picker-empty">
+                  {t("sales.form.noApplianceResults", "No appliances found.")}
+                </div>
+              ) : (
+                sortedAppliances.map((a) => (
+                  <button
+                    type="button"
+                    key={a.id}
+                    className="appliance-option"
                     onClick={() => {
                       updateField("appliance_id", String(a.id));
                       setApplianceSelectOpen(false);
                       setApplianceSearch("");
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    <Package size={18} color="#6b7280" />
-                    <div>
-                      <div style={{ fontWeight: 500 }}>{a.name}</div>
-                      <div style={{ fontSize: '12px', color: '#6b7280' }}>{a.brand}</div>
-                    </div>
-                  </div>
-              ))}
+                    <span className="appliance-option-icon">
+                      <Package size={18} />
+                    </span>
+                    <span className="appliance-option-body">
+                      <span className="appliance-option-specs">
+                        {a.category && (
+                          <span className="appliance-option-spec">
+                            {a.category}
+                          </span>
+                        )}
+                        {a.brand && (
+                          <span className="appliance-option-spec">
+                            {a.brand}
+                          </span>
+                        )}
+                        <span className="appliance-option-name">
+                          {a.name}
+                        </span>
+                      </span>
+                    </span>
+                  </button>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -1285,18 +1652,21 @@ function SaleSummary({
 function PaymentBadge({
   type,
 }) {
+  const {
+    t,
+  } = useTranslation();
   if (type === "credit") {
     return (
       <span className="payment-badge credit">
         <CreditCard size={13} />
-        Credit
+        {t("common.payment.credit", "Credit")}
       </span>
     );
   }
   return (
     <span className="payment-badge cash">
       <Banknote size={13} />
-      Cash
+      {t("common.payment.cash", "Cash")}
     </span>
   );
 }

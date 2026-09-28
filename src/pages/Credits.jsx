@@ -17,6 +17,7 @@ import {
   CalendarDays,
   X,
   Banknote,
+  Printer,
 } from "lucide-react";
 import {
   getCredits,
@@ -28,6 +29,7 @@ import {
   getPaymentsByCredit,
   recordPayment,
 } from "../api/payments";
+import PrintSelectedModal from "../components/PrintSelectedModal";
 function getToday() {
   const now = new Date();
   const year = now.getFullYear();
@@ -86,6 +88,84 @@ function Credits() {
   ] = useState("");
   const [saving, setSaving] =
     useState(false);
+  /* ── Combined print selection ── */
+  const [
+    selectedIds,
+    setSelectedIds,
+  ] = useState([]);
+  const [
+    selectedCustomerId,
+    setSelectedCustomerId,
+  ] = useState(null);
+  const [
+    selectionWarning,
+    setSelectionWarning,
+  ] = useState("");
+  const [
+    printModalOpen,
+    setPrintModalOpen,
+  ] = useState(false);
+  const [
+    printingCreditId,
+    setPrintingCreditId,
+  ] = useState(null);
+  // Prints the most recent payment of a debt straight from the row, so there
+  // is no need to open Payment History first. Falls back to the original
+  // first bill when the debt has no payments yet.
+  async function printLatestPayment(
+    credit
+  ) {
+    if (!credit) return;
+    setPrintingCreditId(credit.id);
+    // Opened synchronously so the popup blocker treats it as a user gesture;
+    // the tab is then pointed at the resolved receipt.
+    const tab = window.open(
+      "",
+      "_blank"
+    );
+    let url = `/receipt/sale/${credit.sale_id}`;
+    try {
+      const list =
+        await getPaymentsByCredit(
+          credit.id
+        );
+      const latest =
+        Array.isArray(list) && list.length
+          ? list.reduce(
+              (acc, item) => {
+                if (!acc) return item;
+                const current = new Date(
+                  item.payment_date ?? 0
+                ).getTime();
+                const best = new Date(
+                  acc.payment_date ?? 0
+                ).getTime();
+                if (current !== best)
+                  return current > best
+                    ? item
+                    : acc;
+                return Number(item.id) >
+                  Number(acc.id)
+                  ? item
+                  : acc;
+              },
+              null
+            )
+          : null;
+      if (latest) {
+        url = `/receipt/payment/${latest.id}`;
+      }
+    } catch {
+      url = `/receipt/sale/${credit.sale_id}`;
+    } finally {
+      setPrintingCreditId(null);
+    }
+    if (tab) {
+      tab.location.href = url;
+    } else {
+      window.open(url, "_blank");
+    }
+  }
   useEffect(() => {
     loadPage();
   }, []);
@@ -189,6 +269,123 @@ function Credits() {
       currentList,
       search,
     ]);
+  const selectedCredits = useMemo(
+    () =>
+      credits.filter((credit) =>
+        selectedIds.includes(credit.id)
+      ),
+    [credits, selectedIds]
+  );
+  const selectedCustomer =
+    selectedCredits[0]?.customer ?? null;
+  useEffect(() => {
+    if (!selectionWarning) {
+      return;
+    }
+    const timer = setTimeout(
+      () => setSelectionWarning(""),
+      4000
+    );
+    return () =>
+      clearTimeout(timer);
+  }, [selectionWarning]);
+  function isSameCustomer(
+    a,
+    b
+  ) {
+    return (
+      String(a ?? "") ===
+      String(b ?? "")
+    );
+  }
+  function toggleSelection(
+    credit
+  ) {
+    const alreadySelected =
+      selectedIds.includes(credit.id);
+    if (
+      !alreadySelected &&
+      selectedIds.length > 0
+    ) {
+      const owner =
+        selectedCredits[0];
+      if (
+        !isSameCustomer(
+          owner?.customer_id,
+          credit.customer_id
+        )
+      ) {
+        setSelectionWarning(
+          t(
+            "printsel.differentCustomerCredit",
+            "All selected credits must belong to the same customer. Unselect the current ones first."
+          )
+        );
+        return;
+      }
+    }
+    if (alreadySelected) {
+      const nextIds =
+        selectedIds.filter(
+          (id) => id !== credit.id
+        );
+      setSelectedIds(nextIds);
+      if (nextIds.length === 0) {
+        setSelectedCustomerId(null);
+      }
+      setSelectionWarning("");
+      return;
+    }
+    setSelectedIds([
+      ...selectedIds,
+      credit.id,
+    ]);
+    setSelectedCustomerId(
+      credit.customer_id ?? null
+    );
+    setSelectionWarning("");
+  }
+  function openPrintModal() {
+    if (selectedCredits.length === 0) {
+      return;
+    }
+    const owners = new Set(
+      selectedCredits.map((credit) =>
+        String(credit.customer_id ?? "")
+      )
+    );
+    const owner =
+      selectedCredits[0];
+    if (
+      owners.size > 1 ||
+      !isSameCustomer(
+        owner?.customer_id,
+        selectedCustomerId
+      )
+    ) {
+      setSelectedIds([]);
+      setSelectedCustomerId(null);
+      setSelectionWarning(
+        t(
+          "printsel.differentCustomerCredit",
+          "All selected credits must belong to the same customer. Unselect the current ones first."
+        )
+      );
+      return;
+    }
+    setSelectionWarning("");
+    setPrintModalOpen(true);
+  }
+  function generateCombinedReceipt() {
+    const ids = selectedCredits
+      .map((credit) => credit.id)
+      .join(",");
+    window.open(
+      `/multi-receipt/credit?ids=${ids}`,
+      "_blank",
+      "noopener"
+    );
+  }
   const totalOutstandingUSD =
     credits.reduce((total, credit) => {
       if (credit.currency !== "USD") return total;
@@ -316,7 +513,31 @@ function Credits() {
             {t("credits.subtitle")}
           </p>
         </div>
+        <div className="printsel-toolbar-actions">
+          {selectedCredits.length > 0 && (
+            <button
+              type="button"
+              className="printsel-selected-button"
+              onClick={openPrintModal}
+            >
+              <Printer size={16} />
+              {t(
+                "printsel.printSelected",
+                "Print Selected"
+              )}
+              <span>
+                {selectedCredits.length}
+              </span>
+            </button>
+          )}
+        </div>
       </div>
+      {selectionWarning && (
+        <div className="printsel-warning">
+          <AlertTriangle size={16} />
+          {selectionWarning}
+        </div>
+      )}
       <section className="credits-summary">
         <CreditSummaryCard
           icon={
@@ -399,7 +620,10 @@ function Credits() {
             <Search size={18} />
             <input
               type="text"
-              placeholder="Search customer, appliance or phone..."
+              placeholder={t(
+                "credits.searchPlace",
+                "Search customer, appliance or phone..."
+              )}
               value={search}
               onChange={(event) =>
                 setSearch(
@@ -420,7 +644,7 @@ function Credits() {
               className="secondary-button"
               onClick={loadPage}
             >
-              Try Again
+              {t("common.tryAgain", "Try Again")}
             </button>
           </div>
         ) : filteredCredits.length ===
@@ -432,11 +656,13 @@ function Credits() {
               />
             </div>
             <h3>
-              No credit accounts
+              {t("credits.emptyTitle", "No credit accounts")}
             </h3>
             <p>
-              No credits match this
-              filter.
+              {t(
+                "credits.emptyFilter",
+                "No credits match this filter."
+              )}
             </p>
           </div>
         ) : (
@@ -444,6 +670,7 @@ function Credits() {
             <table className="data-table credit-table">
               <thead>
                 <tr>
+                  <th style={{width: "40px"}}></th>
                   <th>{t("credits.col.customer")}</th>
                   <th>{t("credits.col.appliance")}</th>
                   <th>{t("credits.col.total")}</th>
@@ -484,7 +711,34 @@ function Credits() {
                           )
                         : 0;
                     return (
-                      <tr key={credit.id}>
+                      <tr
+                        key={credit.id}
+                        className={
+                          selectedIds.includes(
+                            credit.id
+                          )
+                            ? "selected-row"
+                            : ""
+                        }
+                      >
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.includes(
+                              credit.id
+                            )}
+                            onChange={() =>
+                              toggleSelection(
+                                credit
+                              )
+                            }
+                            style={{
+                              cursor: "pointer",
+                              width: "16px",
+                              height: "16px",
+                            }}
+                          />
+                        </td>
                         <td>
                           <div className="credit-customer-cell">
                             <div className="customer-avatar">
@@ -607,6 +861,37 @@ function Credits() {
                                 {t("credits.pay", "Pay")}
                               </button>
                             )}
+                            {credit.sale_id && (
+                              <button
+                                className={
+                                  selectedIds.includes(
+                                    credit.id
+                                  )
+                                    ? "printsel-button printsel-button--active"
+                                    : "printsel-button"
+                                }
+                                disabled={
+                                  printingCreditId ===
+                                  credit.id
+                                }
+                                onClick={() =>
+                                  printLatestPayment(
+                                    credit
+                                  )
+                                }
+                              >
+                                {printingCreditId ===
+                                credit.id
+                                  ? t(
+                                      "credits.printingBill",
+                                      "Preparing..."
+                                    )
+                                  : t(
+                                      "receipt.print",
+                                      "Print"
+                                    )}
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -618,6 +903,46 @@ function Credits() {
           </div>
         )}
       </div>
+      <PrintSelectedModal
+        open={printModalOpen}
+        customer={selectedCustomer}
+        items={selectedCredits.map(
+          (credit) => ({
+            key: credit.id,
+            title:
+              credit.sale?.appliance
+                ?.name ??
+              t(
+                "print.field.appliance",
+                "Appliance"
+              ),
+            subtitle: `${t(
+              "print.field.creditId",
+              "Credit Account"
+            )}: #${credit.id} • ${t(
+              "print.field.remainingDebt",
+              "Remaining Debt"
+            )}: ${formatCurrency(credit.remaining_debt, credit.currency)}`,
+            amount: formatCurrency(
+              credit.total_amount,
+              credit.currency
+            ),
+          })
+        )}
+        onRemove={(id) => {
+          const credit = credits.find(
+            (item) => item.id === id
+          );
+          if (credit) {
+            toggleSelection(credit);
+          }
+        }}
+        onClose={() =>
+          setPrintModalOpen(false)
+        }
+        onConfirm={generateCombinedReceipt}
+        t={t}
+      />
       {/* CREDIT DETAILS */}
       {detailModalOpen &&
         selectedCredit && (
@@ -636,14 +961,16 @@ function Credits() {
               <div className="modal-header">
                 <div>
                   <h2>
-                    Credit #
+                    {t("credits.creditNumber", "Credit #")}
                     {
                       selectedCredit.id
                     }
                   </h2>
                   <p>
-                    Installment agreement
-                    details.
+                    {t(
+                      "credits.installmentDetails",
+                      "Installment agreement details."
+                    )}
                   </p>
                 </div>
                 <button
@@ -669,7 +996,7 @@ function Credits() {
                       {selectedCredit
                         .customer
                         ?.name ??
-                        "Unknown"}
+                        t("credits.unknown", "Unknown")}
                     </h3>
                     <span>
                       <UserRound
@@ -693,14 +1020,14 @@ function Credits() {
                   />
                   <div>
                     <span>
-                      Appliance
+                      {t("credits.col.appliance", "Appliance")}
                     </span>
                     <strong>
                       {selectedCredit
                         .sale
                         ?.appliance
                         ?.name ??
-                        "Unknown"}
+                        t("credits.unknown", "Unknown")}
                     </strong>
                   </div>
                 </div>
@@ -771,17 +1098,17 @@ function Credits() {
                 </div>
                 <div className="profile-section-header credit-payment-heading">
                   <h3>
-                    Payment History
+                    {t("credits.paymentHistory", "Payment History")}
                   </h3>
                 </div>
                 {paymentsLoading ? (
                   <div className="profile-empty">
-                    Loading payments...
+                    {t("credits.loadingPayments", "Loading payments...")}
                   </div>
                 ) : payments.length ===
                   0 ? (
                   <div className="profile-empty">
-                    No payments recorded.
+                    {t("credits.noPayments", "No payments recorded.")}
                   </div>
                 ) : (
                   <div className="credit-payment-history">
@@ -798,7 +1125,13 @@ function Credits() {
                             </div>
                             <div>
                               <strong>{formatCurrency(payment.amount)}</strong>
-                              <span>Payment #{payment.id}</span>
+                              <span>
+                                {t(
+                                  "credits.paymentNumber",
+                                  "Payment #"
+                                )}
+                                {payment.id}
+                              </span>
                             </div>
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -842,7 +1175,7 @@ function Credits() {
                 <div>
                   <h2>{t("credits.form.recordPayment")}</h2>
                   <p>
-                    Credit #
+                    {t("credits.creditNumber", "Credit #")}
                     {
                       selectedCredit.id
                     }{" "}

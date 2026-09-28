@@ -159,8 +159,7 @@ function Dashboard() {
             <div>
               <h2>{t("dashboard.lowStock")}</h2>
               <p>
-                Appliances that may need
-                restocking
+                {t("dashboard.needRestocking")}
               </p>
             </div>
             <span className="panel-count">

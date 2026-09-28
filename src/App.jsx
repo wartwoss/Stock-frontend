@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import Login from './pages/Login';
 import PrivateRoute from './components/PrivateRoute';
 import Receipt from './pages/Receipt';
+import MultiReceipt from './pages/MultiReceipt';
 import AppLayout from "./layouts/AppLayout";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import Dashboard from "./pages/Dashboard";
@@ -126,6 +127,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/receipt/:type/:id" element={<PrivateRoute><Receipt /></PrivateRoute>} />
+        <Route path="/multi-receipt/:type" element={<PrivateRoute><MultiReceipt /></PrivateRoute>} />
         <Route element={<PrivateRoute><AppLayout /></PrivateRoute>}>
           <Route
             path="/"
